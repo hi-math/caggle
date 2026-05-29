@@ -195,19 +195,33 @@ export default function AdminPage() {
               학생별 테스트셋 최고 점수. 미제출자는 하단에 표시됩니다.
             </p>
           </div>
-          <button
-            className="btn btn-ghost btn-sm"
-            style={{ marginTop: 8, color: 'var(--accent-strong)', borderColor: 'var(--accent-border)' }}
-            onClick={() => {
-              if (!confirm('모든 학생의 시뮬레이션 진행 기록(버섯 색깔)을 초기화할까요?')) return;
-              Object.keys(localStorage)
-                .filter(k => k.startsWith('caggle.simResult.'))
-                .forEach(k => localStorage.removeItem(k));
-              alert('시뮬레이션 기록이 초기화됐습니다.');
-            }}
-          >
-            🔄 시뮬레이션 기록 초기화
-          </button>
+          <div style={{ display: 'flex', gap: 8, marginTop: 8, flexWrap: 'wrap' }}>
+            <button
+              className="btn btn-ghost btn-sm"
+              style={{ color: 'var(--accent-strong)', borderColor: 'var(--accent-border)' }}
+              onClick={async () => {
+                if (!confirm('Supabase의 모든 실전 제출 기록을 삭제할까요?\n이 작업은 되돌릴 수 없습니다.')) return;
+                const { error } = await supabase.from('attempts').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+                if (error) { alert('오류: ' + error.message); return; }
+                alert('제출 기록이 초기화됐습니다. 페이지를 새로고침합니다.');
+                location.reload();
+              }}
+            >
+              🗑 제출 기록 초기화
+            </button>
+            <button
+              className="btn btn-ghost btn-sm"
+              onClick={() => {
+                if (!confirm('모든 학생의 시뮬레이션 진행 기록을 초기화할까요?')) return;
+                Object.keys(localStorage)
+                  .filter(k => k.startsWith('caggle.simResult.'))
+                  .forEach(k => localStorage.removeItem(k));
+                alert('시뮬레이션 기록이 초기화됐습니다.');
+              }}
+            >
+              🔄 시뮬레이션 기록 초기화
+            </button>
+          </div>
         </div>
 
         {/* summary cards */}
