@@ -21,15 +21,15 @@ export interface Submission extends LBEntry {
 // ── session ───────────────────────────────────────────────────────────────────
 export function getSession(): Session | null {
   if (typeof window === 'undefined') return null;
-  try { return JSON.parse(localStorage.getItem('caggle.session') ?? 'null'); } catch { return null; }
+  try { return JSON.parse(sessionStorage.getItem('caggle.session') ?? 'null'); } catch { return null; }
 }
 
 export function setSession(s: Session) {
-  localStorage.setItem('caggle.session', JSON.stringify(s));
+  sessionStorage.setItem('caggle.session', JSON.stringify(s));
 }
 
 export function clearSession() {
-  localStorage.removeItem('caggle.session');
+  sessionStorage.removeItem('caggle.session');
 }
 
 // ── users (client-side auth — username only, no password) ────────────────────
