@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>caggle — 연습</title>
+<link rel="stylesheet" href="pages/assets/styles.css"/>
+<script>try{var h=localStorage.getItem('caggle.accentH');if(h!=null)document.documentElement.style.setProperty('--accent-h',h)}catch(e){}</script>
+<style>
+.ws-head{background:var(--surface);border-bottom:1px solid var(--border)}
+.ws-head .inner{max-width:1460px;margin:0 auto;padding:18px 26px 0}
+.ws-tabs{display:flex;gap:2px;margin-top:16px}
+.ws-tabs a{padding:10px 16px;font-size:14px;font-weight:500;color:var(--ink-2);border-bottom:2px solid transparent;white-space:nowrap}
+.ws-tabs a:hover{color:var(--ink)}
+.ws-tabs a.active{color:var(--ink);font-weight:600;border-bottom-color:var(--accent)}
+.ws-grid{display:grid;grid-template-columns:260px 1fr 300px;gap:20px;max-width:1460px;margin:0 auto;padding:20px 26px 80px;align-items:start}
+.s{display:flex;flex-direction:column;gap:16px}
+
+/* tree builder */
+.tb-wrap{min-height:200px;overflow-x:auto;padding:4px}
+.t-node{display:flex;flex-direction:column;align-items:flex-start}
+.t-card{background:var(--surface);border:1px solid var(--border-2);border-radius:var(--radius);padding:12px 14px;min-width:260px;box-shadow:var(--shadow-sm);position:relative}
+.t-card.is-root{border-color:var(--accent);border-width:1.5px}
+.t-card.is-leaf{border-color:oklch(0.84 0.07 250);background:oklch(0.975 0.018 250)}
+.t-card-head{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.t-card-head .tag{font-size:10px;height:18px}
+.t-del{margin-left:auto;appearance:none;border:none;background:transparent;color:var(--ink-3);font-size:14px;cursor:pointer;width:20px;height:20px;display:grid;place-items:center;border-radius:4px}
+.t-del:hover{background:oklch(0.97 0.03 25);color:var(--accent-strong)}
+.t-cond{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.t-cond select,.t-cond input{height:32px;padding:0 8px;border:1px solid var(--border-2);border-radius:var(--radius-sm);font-family:var(--mono);font-size:12.5px;background:var(--surface);color:var(--ink)}
+.t-cond select{cursor:pointer}
+.t-cond input{width:72px}
+.t-cond select:focus,.t-cond input:focus{outline:none;border-color:var(--accent)}
+.t-leaf-sel{height:34px;padding:0 10px;border:1px solid oklch(0.84 0.07 250);border-radius:var(--radius-sm);font-family:var(--mono);font-size:13px;font-weight:700;background:transparent;cursor:pointer;color:var(--ink)}
+.t-leaf-sel:focus{outline:none;border-color:var(--accent)}
+.t-children{display:flex;gap:0;margin-top:12px;position:relative;padding-left:20px}
+.t-branch{display:flex;flex-direction:column;align-items:flex-start;padding-right:20px;position:relative}
+.branch-connector{position:absolute;left:0;top:0;bottom:50%;border-left:2px solid var(--border-2);border-bottom:2px solid var(--border-2);border-bottom-left-radius:6px;width:20px}
+.branch-label{font-family:var(--mono);font-size:10.5px;font-weight:600;padding:2px 7px;border-radius:4px;margin-bottom:8px;white-space:nowrap}
+.branch-label.bl-true{background:oklch(0.95 0.045 150);color:oklch(0.45 0.15 150)}
+.branch-label.bl-false{background:var(--accent-soft-2);color:var(--accent-strong)}
+.t-slot{display:flex;gap:6px;padding:10px;border:1.5px dashed var(--border-2);border-radius:var(--radius);background:var(--surface-2);min-width:180px}
+.t-slot button{height:28px;padding:0 10px;font-size:12px}
+
+/* metrics */
+.acc-big{font-family:var(--mono);font-weight:700;font-size:40px;letter-spacing:-.02em}
+.mat-wrap{overflow-x:auto}
+.mat-table{border-collapse:collapse;font-family:var(--mono);font-size:11.5px}
+.mat-table td,.mat-table th{padding:5px 8px;text-align:center;border:1px solid var(--border)}
+.mat-table th{background:var(--surface-2);font-weight:600;color:var(--ink-2)}
+.mat-cell-diag{font-weight:700;color:oklch(0.45 0.15 150)}
+.mat-cell-miss{color:var(--accent-strong)}
+.per-cls{display:flex;flex-direction:column;gap:0}
+.cls-row{display:grid;grid-template-columns:22px 1fr 1fr 1fr 36px;gap:6px;align-items:center;padding:7px 0;border-bottom:1px solid var(--border);font-family:var(--mono);font-size:12px}
+.cls-row:last-child{border-bottom:none}
+.cls-row .cls{font-weight:700;font-size:13px}
+.mini-bar{height:6px;background:var(--surface-3);border-radius:4px;overflow:hidden}
+.mini-bar i{display:block;height:100%;background:var(--accent);border-radius:4px}
+.side-stat{display:flex;align-items:center;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--border);font-size:13.5px}
+.side-stat:last-child{border-bottom:none}
+.side-stat .k{color:var(--ink-2);font-size:13px}
+.side-stat .v{font-family:var(--mono);font-weight:600}
+.schema-col{display:flex;align-items:center;gap:8px;padding:6px 0;font-family:var(--mono);font-size:12px;color:var(--ink-2);border-bottom:1px solid var(--border)}
+.schema-col:last-child{border-bottom:none}
+.schema-col .ty{color:var(--ink-4);font-size:11px;margin-left:auto}
+.dot-accent{width:7px;height:7px;border-radius:2px;background:var(--accent);flex:none}
+.dot-dim{width:7px;height:7px;border-radius:2px;background:var(--ink-4);flex:none}
+</style>
+</head>
+<body>
+<div class="shell">
+  <header class="topbar">
+    <a class="brand" href="simulate.html">
+      <svg class="logo" viewBox="0 0 32 32" fill="none">
+        <circle cx="16" cy="6" r="4" fill="var(--accent)"/>
+        <circle cx="7" cy="24" r="4" fill="none" stroke="var(--ink)" stroke-width="2"/>
+        <circle cx="25" cy="24" r="4" fill="none" stroke="var(--ink)" stroke-width="2"/>
+        <path d="M16 10 L7 20 M16 10 L25 20" stroke="var(--ink)" stroke-width="2" stroke-linecap="round"/>
+      </svg>
+      <span class="name" style="font-family:var(--mono);font-weight:700;letter-spacing:-.02em">c<b style="color:var(--accent)">a</b>ggle</span>
+    </a>
+    <nav class="nav">
+      <a href="simulate.html">시뮬레이션</a>
+      <a href="practice.html" class="active">연습</a>
+      <a href="exam.html">실전</a>
+      <a href="leaderboard.html">리더보드</a>
+    </nav>
+    <div class="spacer"></div>
+    <div id="user-chip" class="avatar" style="font-size:12px">--</div>
+  </header>
+
+  <!-- competition header -->
+  <div class="ws-head">
+    <div class="inner">
+      <div class="between">
+        <div>
+          <span class="kicker accent">연습 모드 · 라벨 공개 · 횟수 무제한</span>
+          <div style="display:flex;align-items:center;gap:10px;margin-top:8px">
+            <h1 style="font-size:22px;letter-spacing:-.02em">Drug 처방 예측 — 연습셋</h1>
+            <span class="tag">100행</span>
+          </div>
+          <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">
+            <span class="tag">평가지표 · <b style="color:var(--ink);margin-left:3px">accuracy</b></span>
+            <span class="tag">5개 클래스 · A B C X Y</span>
+            <span class="tag">속성 5개</span>
+          </div>
+        </div>
+        <a class="btn btn-primary" href="exam.html">실전 도전 →</a>
+      </div>
+      <nav class="ws-tabs">
+        <a href="#" class="active">트리 빌더</a>
+        <a href="simulate.html">분할 시뮬레이터</a>
+      </nav>
+    </div>
+  </div>
+
+  <div class="ws-grid">
+    <!-- LEFT sidebar -->
+    <aside class="s">
+      <div class="card card-pad">
+        <span class="kicker">내 현재 점수</span>
+        <div style="display:flex;align-items:baseline;gap:6px;margin:10px 0 4px">
+          <span class="acc-big" id="sb-acc">–</span>
+          <span class="muted3" style="font-family:var(--mono);font-size:13px">accuracy</span>
+        </div>
+        <div class="bar" style="margin:8px 0 10px"><i id="sb-bar" style="width:0%"></i></div>
+        <div class="side-stat"><span class="k">정답</span><span class="v" id="sb-correct">–</span></div>
+        <div class="side-stat"><span class="k">Macro-F1</span><span class="v" id="sb-f1">–</span></div>
+        <div class="side-stat"><span class="k">노드 수</span><span class="v" id="sb-nodes">0</span></div>
+      </div>
+
+      <div class="card card-pad">
+        <span class="kicker">데이터 스키마</span>
+        <div style="margin-top:10px">
+          <div class="schema-col"><span class="dot-accent"></span>Na_to_K<span class="ty">float</span></div>
+          <div class="schema-col"><span class="dot-accent"></span>Age<span class="ty">int</span></div>
+          <div class="schema-col"><span class="dot-dim"></span>BP<span class="ty">cat</span></div>
+          <div class="schema-col"><span class="dot-dim"></span>Cholesterol<span class="ty">cat</span></div>
+          <div class="schema-col"><span class="dot-dim"></span>Sex<span class="ty">cat</span></div>
+        </div>
+        <div style="margin-top:12px;font-size:12px;color:var(--ink-3);font-family:var(--mono)">타깃: Drug (A B C X Y)</div>
+      </div>
+
+      <div class="card card-pad">
+        <div class="between" style="margin-bottom:12px">
+          <span class="kicker">클래스 분포</span>
+        </div>
+        <div id="class-dist" style="display:flex;flex-direction:column;gap:5px"></div>
+      </div>
+    </aside>
+
+    <!-- CENTER: tree builder -->
+    <section>
+      <div class="card">
+        <div class="card-head">
+          <h3>트리 빌더</h3>
+          <div style="display:flex;gap:8px;align-items:center">
+            <span id="tree-status" class="tag">빈 트리</span>
+            <button class="btn btn-ghost btn-sm" onclick="resetTree()">초기화</button>
+            <button class="btn btn-soft btn-sm" onclick="loadExample()">예제 불러오기</button>
+          </div>
+        </div>
+        <div class="card-pad">
+          <div class="tb-wrap" id="tree-builder"></div>
+        </div>
+      </div>
+
+      <!-- wrong rows -->
+      <div class="card" style="margin-top:16px" id="wrong-card">
+        <div class="card-head"><h3>오답 행 (최대 10개)</h3><span id="wrong-count" class="tag"></span></div>
+        <div style="overflow-x:auto">
+          <table class="table" id="wrong-table">
+            <thead><tr>
+              <th>#</th><th>Age</th><th>Sex</th><th>BP</th><th>Cholesterol</th><th>Na_to_K</th><th>실제</th><th>예측</th>
+            </tr></thead>
+            <tbody id="wrong-body"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- RIGHT: metrics -->
+    <aside class="s">
+      <div class="card card-pad">
+        <span class="kicker" style="margin-bottom:12px">혼동행렬 (Confusion Matrix)</span>
+        <div class="mat-wrap">
+          <table class="mat-table" id="mat-table"></table>
+        </div>
+        <p class="muted3" style="font-size:11px;font-family:var(--mono);margin-top:8px">행=실제, 열=예측</p>
+      </div>
+
+      <div class="card card-pad">
+        <span class="kicker" style="margin-bottom:12px">클래스별 지표</span>
+        <div style="display:grid;grid-template-columns:20px 1fr 1fr 1fr;gap:4px 6px;font-family:var(--mono);font-size:11px;color:var(--ink-3);margin-bottom:6px;padding:0 2px">
+          <span></span><span>Prec</span><span>Rec</span><span>F1</span>
+        </div>
+        <div class="per-cls" id="per-cls"></div>
+      </div>
+    </aside>
+  </div>
+</div>
+
+<script src="drug_data.js"></script>
+<script>
+// ── session ──────────────────────────────────────────────────────────────────
+const sess = requireLogin('practice.html');
+if (sess) document.getElementById('user-chip').textContent = sess.username.slice(0,2).toUpperCase();
+
+// ── class distribution display ───────────────────────────────────────────────
+const CLS_COLORS = { A:'oklch(0.62 0.20 25)', B:'oklch(0.62 0.18 50)', C:'oklch(0.62 0.14 150)', X:'oklch(0.62 0.13 250)', Y:'oklch(0.62 0.12 80)' };
+(function renderClassDist() {
+  const cnt = {};
+  CLASSES.forEach(c => cnt[c]=0);
+  PRACTICE_DATA.forEach(r => cnt[r.Drug]++);
+  const max = Math.max(...Object.values(cnt));
+  document.getElementById('class-dist').innerHTML = CLASSES.map(c =>
+    `<div style="display:grid;grid-template-columns:16px 1fr 28px;align-items:center;gap:6px;font-family:var(--mono);font-size:12px">
+      <span style="font-weight:700;color:${CLS_COLORS[c]}">${c}</span>
+      <div style="height:14px;background:var(--surface-3);border-radius:4px;overflow:hidden">
+        <div style="height:100%;width:${(cnt[c]/max*100).toFixed(0)}%;background:${CLS_COLORS[c]};border-radius:4px"></div>
+      </div>
+      <span style="color:var(--ink-2);text-align:right">${cnt[c]}</span>
+    </div>`
+  ).join('');
+})();
+
+// ── tree state ────────────────────────────────────────────────────────────────
+let treeRoot = null;
+let _uid = 1;
+function uid() { return String(_uid++); }
+
+function getAtPath(root, path) {
+  if (!path) return root;
+  return path.split('.').reduce((n,k) => n?.[k], root);
+}
+function setAtPath(root, path, value) {
+  if (!path) return value;
+  const keys = path.split('.');
+  const clone = JSON.parse(JSON.stringify(root));
+  let node = clone;
+  for (let i = 0; i < keys.length-1; i++) {
+    if (node[keys[i]] === undefined) node[keys[i]] = {};
+    node = node[keys[i]];
+  }
+  node[keys[keys.length-1]] = value;
+  return clone;
+}
+
+function makeSplit(attr, op, val) {
+  const isNum = NUMERIC_ATTRS.has(attr);
+  return { id:uid(), type:'split', attribute:attr,
+    condition:{ kind: isNum?'numeric':'categorical', operator:op, value:val },
+    children:{ true:null, false:null } };
+}
+function makeLeaf(pred) { return { id:uid(), type:'leaf', prediction:pred }; }
+
+// ── rendering ─────────────────────────────────────────────────────────────────
+function renderNode(node, path, isRoot) {
+  if (!node) return renderSlot(path);
+  if (node.type === 'leaf') return renderLeaf(node, path, isRoot);
+  return renderSplit(node, path, isRoot);
+}
+
+function renderSlot(path) {
+  const p = JSON.stringify(path);
+  return `<div class="t-slot">
+    <button class="btn btn-ghost btn-sm" onclick='addNode(${p},"split")'>+ 조건</button>
+    <button class="btn btn-soft btn-sm" onclick='addNode(${p},"leaf")'>+ 리프</button>
+  </div>`;
+}
+
+function renderLeaf(node, path, isRoot) {
+  const p = JSON.stringify(path);
+  const cls = node.prediction;
+  return `<div class="t-node">
+    <div class="t-card is-leaf${isRoot?' is-root':''}">
+      <div class="t-card-head">
+        <span class="tag">리프</span>
+        <span style="font-family:var(--mono);font-size:12px;color:var(--ink-2)">예측 클래스</span>
+        <button class="t-del" onclick='deleteNode(${p})' title="삭제">✕</button>
+      </div>
+      <select class="t-leaf-sel" style="color:${CLS_COLORS[cls]}" onchange='updateLeafPred(${p},this.value)'>
+        ${CLASSES.map(c=>`<option value="${c}"${c===cls?' selected':''}>${c}</option>`).join('')}
+      </select>
+    </div>
+  </div>`;
+}
+
+function renderSplit(node, path, isRoot) {
+  const p = JSON.stringify(path);
+  const attr = node.attribute;
+  const isNum = NUMERIC_ATTRS.has(attr);
+  const ops = isNum ? ['>=','>','<=','<'] : ['==','!='];
+  const op = node.condition.operator;
+  const val = node.condition.value;
+  const catVals = CAT_VALUES[attr] || [];
+
+  const attrSel = `<select onchange='updateAttr(${p},this.value)'>${
+    ATTRIBUTES.map(a=>`<option${a===attr?' selected':''}>${a}</option>`).join('')
+  }</select>`;
+  const opSel = `<select onchange='updateOp(${p},this.value)'>${
+    ops.map(o=>`<option${o===op?' selected':''}>${o}</option>`).join('')
+  }</select>`;
+  const valInput = isNum
+    ? `<input type="number" value="${val}" step="${attr==='Na_to_K'?0.5:1}" onchange='updateVal(${p},parseFloat(this.value)||0)'>`
+    : `<select onchange='updateVal(${p},this.value)'>${catVals.map(v=>`<option${v===val?' selected':''}>${v}</option>`).join('')}</select>`;
+
+  const trueP = path ? path+'.children.true' : 'children.true';
+  const falseP = path ? path+'.children.false' : 'children.false';
+
+  return `<div class="t-node">
+    <div class="t-card${isRoot?' is-root':''}">
+      <div class="t-card-head">
+        <span class="tag accent">분할</span>
+        <button class="t-del" onclick='deleteNode(${p})' title="서브트리 삭제">✕</button>
+      </div>
+      <div class="t-cond">${attrSel}${opSel}${valInput}</div>
+    </div>
+    <div class="t-children">
+      <div class="t-branch">
+        <div class="branch-connector"></div>
+        <div class="branch-label bl-true">True ✓ (조건 만족)</div>
+        ${renderNode(node.children.true, trueP, false)}
+      </div>
+      <div class="t-branch">
+        <div class="branch-label bl-false">False ✗ (조건 불만족)</div>
+        ${renderNode(node.children.false, falseP, false)}
+      </div>
+    </div>
+  </div>`;
+}
+
+function renderTree() {
+  document.getElementById('tree-builder').innerHTML = renderNode(treeRoot, '', true);
+  updateMetrics();
+}
+
+// ── tree mutations ────────────────────────────────────────────────────────────
+function addNode(path, type) {
+  const node = type==='leaf' ? makeLeaf('Y') : makeSplit('Na_to_K','>=',15);
+  treeRoot = !path ? node : setAtPath(treeRoot, path, node);
+  renderTree();
+}
+function deleteNode(path) {
+  if (!path) { treeRoot = null; }
+  else { treeRoot = setAtPath(treeRoot, path, null); }
+  renderTree();
+}
+function updateLeafPred(path, val) {
+  treeRoot = setAtPath(treeRoot, (path?path+'.':'')+'prediction', val);
+  updateMetrics();
+}
+function updateAttr(path, attr) {
+  const isNum = NUMERIC_ATTRS.has(attr);
+  const op = isNum ? '>=' : '==';
+  const val = isNum ? (attr==='Na_to_K'?15:45) : (CAT_VALUES[attr]||[''])[0];
+  const kind = isNum ? 'numeric' : 'categorical';
+  const base = path ? path+'.' : '';
+  treeRoot = setAtPath(treeRoot, base+'attribute', attr);
+  treeRoot = setAtPath(treeRoot, base+'condition', { kind, operator:op, value:val });
+  renderTree();
+}
+function updateOp(path, op) {
+  treeRoot = setAtPath(treeRoot, (path?path+'.':'')+'condition.operator', op);
+  updateMetrics();
+}
+function updateVal(path, val) {
+  treeRoot = setAtPath(treeRoot, (path?path+'.':'')+'condition.value', val);
+  updateMetrics();
+}
+function resetTree() { if(confirm('트리를 초기화할까요?')){ treeRoot=null; renderTree(); } }
+
+// ── example tree (Na_to_K>=15 → Y, then BP branching) ─────────────────────────
+function loadExample() {
+  if (treeRoot && !confirm('현재 트리를 덮어쓸까요?')) return;
+  treeRoot = makeSplit('Na_to_K','>=',15);
+  treeRoot.children.true = makeLeaf('Y');
+  treeRoot.children.false = makeSplit('BP','==','LOW');
+  treeRoot.children.false.children.true = makeSplit('Cholesterol','==','HIGH');
+  treeRoot.children.false.children.true.children.true = makeLeaf('C');
+  treeRoot.children.false.children.true.children.false = makeLeaf('X');
+  treeRoot.children.false.children.false = makeLeaf('X');
+  renderTree();
+}
+
+// ── metrics update ────────────────────────────────────────────────────────────
+function updateMetrics() {
+  const result = scoreTree(treeRoot, PRACTICE_DATA);
+  const pct = (result.accuracy*100).toFixed(1)+'%';
+
+  document.getElementById('sb-acc').textContent = pct;
+  document.getElementById('sb-bar').style.width = pct;
+  document.getElementById('sb-correct').textContent = result.correct+' / '+result.total;
+  document.getElementById('sb-f1').textContent = result.macroF1.toFixed(4);
+  document.getElementById('sb-nodes').textContent = result.nodeCount;
+
+  // status tag
+  const st = document.getElementById('tree-status');
+  if (!treeRoot) { st.textContent = '빈 트리'; st.className = 'tag'; }
+  else { st.textContent = `노드 ${result.nodeCount} · ${pct}`; st.className = 'tag accent'; }
+
+  // confusion matrix
+  const mat = result.mat;
+  const matEl = document.getElementById('mat-table');
+  matEl.innerHTML = `<tr><th>↓실제\\예측→</th>${CLASSES.map(c=>`<th>${c}</th>`).join('')}<th>UNCLS</th></tr>`
+    + CLASSES.map(actual =>
+      `<tr><th>${actual}</th>${[...CLASSES,'UNCLASSIFIED'].map(pred => {
+        const v = mat[actual]?.[pred] ?? 0;
+        const cls = pred===actual ? 'mat-cell-diag' : (v>0?'mat-cell-miss':'');
+        return `<td class="${cls}">${v||''}</td>`;
+      }).join('')}</tr>`
+    ).join('');
+
+  // per-class
+  const pcEl = document.getElementById('per-cls');
+  pcEl.innerHTML = CLASSES.map(c => {
+    const m = result.perClass[c];
+    return `<div class="cls-row">
+      <span class="cls" style="color:${CLS_COLORS[c]}">${c}</span>
+      <div class="mini-bar"><i style="width:${(m.prec*100).toFixed(0)}%"></i></div>
+      <div class="mini-bar" style="--accent:oklch(0.62 0.13 250)"><i style="width:${(m.rec*100).toFixed(0)}%;background:oklch(0.62 0.13 250)"></i></div>
+      <div class="mini-bar" style=""><i style="width:${(m.f1*100).toFixed(0)}%;background:oklch(0.62 0.12 80)"></i></div>
+      <span style="color:var(--ink-2)">${m.f1.toFixed(2)}</span>
+    </div>`;
+  }).join('');
+
+  // wrong rows
+  const wrongs = result.scored.filter(r => !r.ok).slice(0,10);
+  document.getElementById('wrong-count').textContent = (result.total-result.correct)+' 오답';
+  const wb = document.getElementById('wrong-body');
+  wb.innerHTML = wrongs.map((r,i) =>
+    `<tr>
+      <td class="num">${i+1}</td>
+      <td class="num">${r.Age}</td><td>${r.Sex}</td><td>${r.BP}</td><td>${r.Cholesterol}</td>
+      <td class="num">${r.Na_to_K.toFixed(3)}</td>
+      <td><b style="color:oklch(0.55 0.15 150)">${r.Drug}</b></td>
+      <td><b style="color:var(--accent-strong)">${r.pred}</b></td>
+    </tr>`
+  ).join('');
+}
+
+// ── init ──────────────────────────────────────────────────────────────────────
+renderTree();
+</script>
+
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" crossorigin="anonymous"></script>
+<script type="text/babel" src="pages/assets/tweaks-panel.jsx"></script>
+<script type="text/babel" src="pages/assets/accent-tweak.jsx"></script>
+</body>
+</html>

@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>caggle — 작업 스페이스</title>
+<link rel="stylesheet" href="assets/styles.css" />
+<script>
+  try { var h = localStorage.getItem('caggle.accentH'); if (h != null) document.documentElement.style.setProperty('--accent-h', h); } catch (e) {}
+</script>
+<style>
+  .ws-head { background: var(--surface); border-bottom: 1px solid var(--border); }
+  .ws-head .inner { max-width: 1460px; margin: 0 auto; padding: 22px 26px 0; }
+  .ws-title { display: flex; align-items: center; gap: 12px; }
+  .ws-title h1 { font-size: 24px; letter-spacing: -.02em; white-space: nowrap; }
+  .ws-chips { display: flex; gap: 10px; margin-top: 12px; }
+  .ws-tabs { display: flex; gap: 2px; margin-top: 20px; }
+  .ws-tabs a { padding: 11px 16px; font-size: 14px; font-weight: 500; color: var(--ink-2); border-bottom: 2px solid transparent; white-space: nowrap; }
+  .ws-tabs a:hover { color: var(--ink); }
+  .ws-tabs a.active { color: var(--ink); font-weight: 600; border-bottom-color: var(--accent); }
+
+  .ws-grid { display: grid; grid-template-columns: 252px 1fr 332px; gap: 20px; max-width: 1460px; margin: 0 auto; padding: 24px 26px 80px; align-items: start; }
+  .stack { display: flex; flex-direction: column; gap: 18px; }
+
+  /* sidebar */
+  .side-stat { display: flex; align-items: baseline; justify-content: space-between; padding: 11px 0; border-bottom: 1px solid var(--border); font-size: 13.5px; }
+  .side-stat:last-child { border-bottom: none; }
+  .side-stat .k { color: var(--ink-2); white-space: nowrap; }
+  .side-stat .v { font-family: var(--mono); font-weight: 600; }
+  .schema { font-family: var(--mono); font-size: 12px; }
+  .schema .col { display: flex; align-items: center; gap: 8px; padding: 7px 0; color: var(--ink-2); }
+  .schema .col .ty { color: var(--ink-4); margin-left: auto; font-size: 11px; }
+  .schema .col .imp { width: 7px; height: 7px; border-radius: 2px; background: var(--accent); }
+
+  /* hyperparameters */
+  .hp { display: grid; grid-template-columns: 1fr 1fr; gap: 18px 24px; }
+  .hp .ctrl .lab { display: flex; justify-content: space-between; font-family: var(--mono); font-size: 12px; color: var(--ink-2); margin-bottom: 8px; }
+  .hp .ctrl .lab b { color: var(--ink); }
+  .seg { display: flex; gap: 0; border: 1px solid var(--border-2); border-radius: var(--radius-sm); overflow: hidden; }
+  .seg button { flex: 1; height: 34px; border: none; background: var(--surface); font-family: var(--mono); font-size: 12.5px; color: var(--ink-2); border-right: 1px solid var(--border); }
+  .seg button:last-child { border-right: none; }
+  .seg button.on { background: var(--ink); color: #fff; }
+  .slider { position: relative; height: 6px; background: var(--surface-3); border-radius: 99px; }
+  .slider i { position: absolute; left: 0; top: 0; height: 100%; background: var(--accent); border-radius: 99px; }
+  .slider b { position: absolute; top: 50%; width: 16px; height: 16px; border-radius: 50%; background: var(--surface); border: 2px solid var(--accent); transform: translate(-50%, -50%); box-shadow: var(--shadow-sm); }
+
+  /* tree viz */
+  .viz { background: var(--surface-2); border-radius: 8px; border: 1px solid var(--border); padding: 8px; overflow-x: auto; }
+  .legend { display: flex; gap: 16px; margin-top: 12px; font-family: var(--mono); font-size: 11.5px; color: var(--ink-2); }
+
+  /* feature importance */
+  .fi { display: flex; flex-direction: column; gap: 11px; }
+  .fi .r { display: grid; grid-template-columns: 96px 1fr 46px; align-items: center; gap: 12px; font-family: var(--mono); font-size: 12.5px; }
+  .fi .r .name { color: var(--ink-2); }
+  .fi .r .v { text-align: right; font-weight: 600; }
+
+  /* submit */
+  .drop { border: 1.5px dashed var(--border-2); border-radius: var(--radius); padding: 24px; text-align: center; background: var(--surface-2); }
+  .drop .ic { width: 38px; height: 38px; margin: 0 auto 10px; color: var(--ink-3); }
+  .drop .t { font-weight: 600; font-size: 14px; }
+  .drop .s { font-family: var(--mono); font-size: 11.5px; color: var(--ink-3); margin-top: 5px; }
+  .gauge { display: flex; align-items: center; gap: 14px; padding: 14px; background: var(--accent-soft); border: 1px solid var(--accent-border); border-radius: var(--radius); }
+  .gauge .big { font-family: var(--mono); font-weight: 700; font-size: 28px; color: var(--accent-strong); }
+  .sub-item { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--border); font-size: 13px; }
+  .sub-item:last-child { border-bottom: none; }
+  .sub-item .score { margin-left: auto; font-family: var(--mono); font-weight: 600; }
+  .sub-item .when { font-family: var(--mono); font-size: 11px; color: var(--ink-3); }
+</style>
+</head>
+<body>
+<div class="shell">
+  <!-- TOPBAR -->
+  <header class="topbar">
+    <a class="brand" href="Practice.html">
+      <svg class="logo" viewBox="0 0 32 32" fill="none">
+        <circle cx="16" cy="6" r="4" fill="var(--accent)"/>
+        <circle cx="7" cy="24" r="4" fill="none" stroke="var(--ink)" stroke-width="2"/>
+        <circle cx="25" cy="24" r="4" fill="none" stroke="var(--ink)" stroke-width="2"/>
+        <path d="M16 10 L7 20 M16 10 L25 20" stroke="var(--ink)" stroke-width="2" stroke-linecap="round"/>
+      </svg>
+      <span class="name">c<b>a</b>ggle</span>
+    </a>
+    <nav class="nav">
+      <a href="Practice.html">연습장</a>
+      <a href="Workspace.html" class="active">대회</a>
+      <a href="Leaderboard.html">리더보드</a>
+      <a href="#">학습 자료</a>
+    </nav>
+    <div class="spacer"></div>
+    <div class="searchbox">
+      <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="7" cy="7" r="5"/><path d="M11 11l3 3"/></svg>
+      데이터셋 검색…
+      <kbd>⌘K</kbd>
+    </div>
+    <div class="avatar">JY</div>
+  </header>
+
+  <!-- COMPETITION HEADER -->
+  <div class="ws-head" data-screen-label="작업 스페이스 / 헤더">
+    <div class="inner">
+      <div class="between">
+        <div>
+          <span class="kicker accent">진행 중인 대회</span>
+          <div class="ws-title" style="margin-top:8px">
+            <h1>은행 고객 이탈 예측 챌린지</h1>
+            <span class="tag live">LIVE</span>
+          </div>
+          <div class="ws-chips">
+            <span class="tag">평가지표 · <b style="color:var(--ink);margin-left:4px">f1_macro</b></span>
+            <span class="tag">트리 계열 모델만 허용</span>
+            <span class="tag">마감까지 <b style="color:var(--accent-strong);margin-left:4px">04일 12:38</b></span>
+            <span class="tag">참가 <b style="color:var(--ink);margin-left:4px">1,284</b> 팀</span>
+          </div>
+        </div>
+        <a class="btn btn-ghost" href="Leaderboard.html">리더보드 보기 →</a>
+      </div>
+      <nav class="ws-tabs">
+        <a href="#">개요</a>
+        <a href="#">데이터</a>
+        <a href="#" class="active">모델 &amp; 제출</a>
+        <a href="#">내 제출</a>
+        <a href="#">토론</a>
+      </nav>
+    </div>
+  </div>
+
+  <!-- WORKSPACE -->
+  <div class="ws-grid">
+    <!-- LEFT -->
+    <aside class="stack" data-screen-label="작업 스페이스 / 사이드바">
+      <div class="card card-pad">
+        <span class="kicker">내 순위</span>
+        <div style="display:flex; align-items:baseline; gap:6px; margin:8px 0 2px">
+          <span class="mono" style="font-size:30px; font-weight:700">#14</span>
+          <span class="muted3 mono" style="font-size:12px">/ 1,284</span>
+        </div>
+        <span class="tag accent" style="height:20px">상위 1.1%</span>
+        <hr class="hr" style="margin:14px 0" />
+        <div class="side-stat"><span class="k">최고 점수</span><span class="v" style="color:var(--accent-strong)">0.8841</span></div>
+        <div class="side-stat"><span class="k">오늘 제출</span><span class="v">3 / 5</span></div>
+        <div class="side-stat"><span class="k">선택한 제출</span><span class="v">2</span></div>
+      </div>
+
+      <div class="card card-pad">
+        <span class="kicker">데이터 스키마</span>
+        <div class="schema" style="margin-top:12px">
+          <div class="col"><span class="imp"></span> credit_score <span class="ty">int</span></div>
+          <div class="col"><span class="imp"></span> age <span class="ty">int</span></div>
+          <div class="col"><span class="imp" style="background:var(--ink-4)"></span> geography <span class="ty">cat</span></div>
+          <div class="col"><span class="imp"></span> balance <span class="ty">float</span></div>
+          <div class="col"><span class="imp" style="background:var(--ink-4)"></span> products <span class="ty">int</span></div>
+          <div class="col"><span class="imp" style="background:var(--ink-4)"></span> is_active <span class="ty">bool</span></div>
+        </div>
+        <a class="btn btn-ghost btn-sm btn-block" href="#" style="margin-top:14px">데이터 전체 보기</a>
+      </div>
+    </aside>
+
+    <!-- CENTER -->
+    <section class="stack" data-screen-label="작업 스페이스 / 모델">
+      <!-- hyperparameters -->
+      <div class="card">
+        <div class="card-head">
+          <h3>하이퍼파라미터</h3>
+          <span class="tag mono">sklearn · DecisionTreeClassifier</span>
+        </div>
+        <div class="card-pad">
+          <div class="hp">
+            <div class="ctrl">
+              <div class="lab">criterion</div>
+              <div class="seg">
+                <button class="on">gini</button>
+                <button>entropy</button>
+                <button>log_loss</button>
+              </div>
+            </div>
+            <div class="ctrl">
+              <div class="lab">max_features</div>
+              <div class="seg">
+                <button>sqrt</button>
+                <button class="on">all</button>
+                <button>log2</button>
+              </div>
+            </div>
+            <div class="ctrl">
+              <div class="lab"><span>max_depth</span><b>6</b></div>
+              <div class="slider"><i style="width:50%"></i><b style="left:50%"></b></div>
+            </div>
+            <div class="ctrl">
+              <div class="lab"><span>min_samples_leaf</span><b>24</b></div>
+              <div class="slider"><i style="width:32%"></i><b style="left:32%"></b></div>
+            </div>
+            <div class="ctrl">
+              <div class="lab"><span>min_samples_split</span><b>40</b></div>
+              <div class="slider"><i style="width:40%"></i><b style="left:40%"></b></div>
+            </div>
+            <div class="ctrl">
+              <div class="lab"><span>ccp_alpha</span><b>0.002</b></div>
+              <div class="slider"><i style="width:18%"></i><b style="left:18%"></b></div>
+            </div>
+          </div>
+          <div class="between" style="margin-top:20px">
+            <span class="mono muted3" style="font-size:12px">마지막 학습 · 2분 전</span>
+            <button class="btn btn-primary btn-sm">▶ 학습 실행</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- training log -->
+      <div class="term">
+        <div class="term-bar">
+          <span class="dot" style="background:#e05a4a"></span>
+          <span class="dot" style="background:#e6b450"></span>
+          <span class="dot" style="background:#5aa86a"></span>
+          <span style="margin-left:6px">train.log</span>
+        </div>
+        <div class="term-body"><span class="c-com"># 5-fold cross validation</span>
+<span class="prompt">fold 1</span>  f1_macro = <span class="c-num">0.8792</span>   nodes=<span class="c-num">41</span>  depth=<span class="c-num">6</span>
+<span class="prompt">fold 2</span>  f1_macro = <span class="c-num">0.8861</span>   nodes=<span class="c-num">39</span>  depth=<span class="c-num">6</span>
+<span class="prompt">fold 3</span>  f1_macro = <span class="c-num">0.8903</span>   nodes=<span class="c-num">43</span>  depth=<span class="c-num">6</span>
+<span class="c-com">────────────────────────────────────</span>
+<span class="c-key">mean f1_macro</span> = <span class="c-num">0.8852</span>  <span class="c-str">▲ +0.0011 vs prev</span></div>
+      </div>
+
+      <!-- tree viz -->
+      <div class="card">
+        <div class="card-head">
+          <h3>학습된 트리</h3>
+          <span class="tag mono">노드 41 · 리프 21 · 깊이 6</span>
+        </div>
+        <div class="card-pad">
+          <div class="viz">
+            <svg viewBox="0 0 720 300" width="100%" aria-label="fitted decision tree">
+              <g>
+                <path class="tree-edge" d="M360 62 C360 92, 180 92, 180 120"/>
+                <path class="tree-edge" d="M360 62 C360 92, 540 92, 540 120"/>
+                <path class="tree-edge" d="M180 162 C180 192, 90 192, 90 220"/>
+                <path class="tree-edge" d="M180 162 C180 192, 270 192, 270 220"/>
+                <path class="tree-edge" d="M540 162 C540 192, 450 192, 450 220"/>
+                <path class="tree-edge" d="M540 162 C540 192, 630 192, 630 220"/>
+                <text class="tree-edge-lab" x="252" y="90">true</text>
+                <text class="tree-edge-lab" x="430" y="90">false</text>
+              </g>
+              <g class="tree-node root"><rect x="295" y="20" width="130" height="42" rx="6"/>
+                <text class="tree-label" x="360" y="40" text-anchor="middle">age ≤ 42.5</text>
+                <text class="tree-sub" x="360" y="55" text-anchor="middle">gini 0.42 · n=8000</text></g>
+              <g class="tree-node"><rect x="115" y="120" width="130" height="42" rx="6"/>
+                <text class="tree-label" x="180" y="140" text-anchor="middle">products ≤ 2</text>
+                <text class="tree-sub" x="180" y="155" text-anchor="middle">gini 0.21 · n=4710</text></g>
+              <g class="tree-node"><rect x="475" y="120" width="130" height="42" rx="6"/>
+                <text class="tree-label" x="540" y="140" text-anchor="middle">is_active ≤ 0.5</text>
+                <text class="tree-sub" x="540" y="155" text-anchor="middle">gini 0.49 · n=3290</text></g>
+              <g class="tree-node leaf-c2"><rect x="25" y="220" width="130" height="42" rx="6"/>
+                <text class="tree-label" x="90" y="240" text-anchor="middle">유지</text>
+                <text class="tree-sub" x="90" y="255" text-anchor="middle">0.94 · n=4102</text></g>
+              <g class="tree-node leaf-c1"><rect x="205" y="220" width="130" height="42" rx="6"/>
+                <text class="tree-label" x="270" y="240" text-anchor="middle">이탈</text>
+                <text class="tree-sub" x="270" y="255" text-anchor="middle">0.71 · n=608</text></g>
+              <g class="tree-node leaf-c1"><rect x="385" y="220" width="130" height="42" rx="6"/>
+                <text class="tree-label" x="450" y="240" text-anchor="middle">이탈</text>
+                <text class="tree-sub" x="450" y="255" text-anchor="middle">0.83 · n=1455</text></g>
+              <g class="tree-node leaf-c2"><rect x="565" y="220" width="130" height="42" rx="6"/>
+                <text class="tree-label" x="630" y="240" text-anchor="middle">유지</text>
+                <text class="tree-sub" x="630" y="255" text-anchor="middle">0.62 · n=1835</text></g>
+            </svg>
+          </div>
+          <div class="legend">
+            <span class="tag dot dot-c2" style="border:none;background:none;padding:0">유지 (class 0)</span>
+            <span class="tag dot dot-c1" style="border:none;background:none;padding:0">이탈 (class 1)</span>
+            <span style="margin-left:auto" class="muted3">＊ 깊이 2까지만 표시 — 전체 보기를 누르면 21개 리프 전체 확인</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- feature importance -->
+      <div class="card card-pad">
+        <span class="kicker">특성 중요도</span>
+        <div class="fi" style="margin-top:14px">
+          <div class="r"><span class="name">age</span><div class="bar"><i style="width:34%"></i></div><span class="v">0.34</span></div>
+          <div class="r"><span class="name">products</span><div class="bar"><i style="width:27%"></i></div><span class="v">0.27</span></div>
+          <div class="r"><span class="name">is_active</span><div class="bar"><i style="width:19%"></i></div><span class="v">0.19</span></div>
+          <div class="r"><span class="name">balance</span><div class="bar"><i style="width:12%"></i></div><span class="v">0.12</span></div>
+          <div class="r"><span class="name">credit_score</span><div class="bar"><i style="width:8%"></i></div><span class="v">0.08</span></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- RIGHT: SUBMIT -->
+    <aside class="stack" data-screen-label="작업 스페이스 / 제출">
+      <div class="card card-pad">
+        <h3 style="margin-bottom:14px">제출하기</h3>
+        <div class="drop">
+          <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 16V4m0 0L8 8m4-4l4 4"/><path d="M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3"/></svg>
+          <div class="t">submission.csv 끌어다 놓기</div>
+          <div class="s">id, churn_proba — 2,000 행</div>
+        </div>
+        <div class="gauge" style="margin-top:16px">
+          <div class="big">0.885</div>
+          <div>
+            <div class="mono" style="font-size:11px; letter-spacing:.06em; text-transform:uppercase; color:var(--ink-3)">검증 점수 (public)</div>
+            <div class="delta-up mono" style="font-size:13px; font-weight:600; margin-top:2px">▲ +0.0033 개선</div>
+          </div>
+        </div>
+        <button class="btn btn-primary btn-block" style="margin-top:14px">이 제출 채점하기</button>
+        <p class="muted3" style="font-size:12px; text-align:center; margin-top:10px; font-family:var(--mono)">오늘 2회 남음 · public 30% / private 70%</p>
+      </div>
+
+      <div class="card">
+        <div class="card-head"><h3>최근 제출</h3><a class="link mono" style="color:var(--accent-strong); font-size:12px; font-weight:600" href="#">전체</a></div>
+        <div class="card-pad" style="padding-top:6px">
+          <div class="sub-item"><span class="tag accent dot" style="border:none;background:none;padding:0">＊</span><div><div>depth=6, leaf=24</div><div class="when">2분 전</div></div><span class="score" style="color:var(--accent-strong)">0.885</span></div>
+          <div class="sub-item"><span style="width:14px"></span><div><div>depth=8, leaf=12</div><div class="when">1시간 전</div></div><span class="score">0.881</span></div>
+          <div class="sub-item"><span style="width:14px"></span><div><div>entropy, depth=5</div><div class="when">3시간 전</div></div><span class="score">0.879</span></div>
+          <div class="sub-item"><span style="width:14px"></span><div><div>baseline tree</div><div class="when">어제</div></div><span class="score">0.842</span></div>
+        </div>
+      </div>
+    </aside>
+  </div>
+</div>
+
+<!-- Tweaks -->
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script type="text/babel" src="assets/tweaks-panel.jsx"></script>
+<script type="text/babel" src="assets/accent-tweak.jsx"></script>
+</body>
+</html>

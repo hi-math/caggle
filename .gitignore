@@ -1,0 +1,15 @@
+# dependencies
+node_modules/
+
+# Next.js
+.next/
+out/
+
+# env (Supabase 키 포함 — 절대 커밋 금지)
+.env.local
+.env*.local
+
+# misc
+.DS_Store
+*.pem
+npm-debug.log*

@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>caggle — 로그인</title>
+<link rel="stylesheet" href="pages/assets/styles.css"/>
+<script>try{var h=localStorage.getItem('caggle.accentH');if(h!=null)document.documentElement.style.setProperty('--accent-h',h)}catch(e){}</script>
+<style>
+body{background-image:none}
+.auth{min-height:100vh;display:grid;grid-template-columns:1.05fr .95fr}
+.auth-brand{position:relative;padding:48px 56px;display:flex;flex-direction:column;
+  background-color:var(--surface);
+  background-image:linear-gradient(var(--bg-grid) 1px,transparent 1px),linear-gradient(90deg,var(--bg-grid) 1px,transparent 1px);
+  background-size:30px 30px;border-right:1px solid var(--border);overflow:hidden}
+.auth-brand .brand .name{font-size:21px}
+.auth-brand .brand .logo{width:34px;height:34px}
+.auth-tag{margin-top:64px;max-width:460px}
+.auth-tag h1{font-size:38px;line-height:1.12;letter-spacing:-.025em}
+.auth-tag h1 em{font-style:normal;color:var(--accent)}
+.auth-tag p{color:var(--ink-2);font-size:15.5px;margin-top:16px;max-width:400px}
+.tree-wrap{margin-top:30px;align-self:center;width:100%;max-width:560px}
+.auth-term{margin-top:auto;max-width:460px}
+.auth-form{display:grid;place-items:center;padding:40px}
+.auth-card{width:100%;max-width:380px}
+.auth-card h2{font-size:23px;letter-spacing:-.01em}
+.auth-card .sub{color:var(--ink-2);margin-top:6px;font-size:14px}
+.stack{display:flex;flex-direction:column;gap:16px}
+.divider{display:flex;align-items:center;gap:12px;color:var(--ink-3);font-family:var(--mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase}
+.divider::before,.divider::after{content:"";flex:1;height:1px;background:var(--border)}
+.row-between{display:flex;align-items:center;justify-content:space-between}
+.link{color:var(--accent-strong);font-weight:600;font-size:13px;cursor:pointer}
+.link:hover{text-decoration:underline}
+.checkbox{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--ink-2)}
+.checkbox input{width:15px;height:15px;accent-color:var(--accent)}
+.foot{margin-top:26px;text-align:center;font-size:13.5px;color:var(--ink-2)}
+.error-msg{background:oklch(0.97 0.03 25);border:1px solid oklch(0.86 0.085 25);color:oklch(0.52 0.19 25);
+  padding:10px 14px;border-radius:var(--radius-sm);font-size:13px;display:none}
+@media(max-width:900px){.auth{grid-template-columns:1fr}.auth-brand{display:none}}
+</style>
+</head>
+<body>
+<div class="auth">
+  <!-- LEFT BRAND -->
+  <section class="auth-brand">
+    <div class="brand">
+      <svg class="logo" viewBox="0 0 32 32" fill="none">
+        <circle cx="16" cy="6" r="4" fill="var(--accent)"/>
+        <circle cx="7" cy="24" r="4" fill="none" stroke="var(--ink)" stroke-width="2"/>
+        <circle cx="25" cy="24" r="4" fill="none" stroke="var(--ink)" stroke-width="2"/>
+        <path d="M16 10 L7 20 M16 10 L25 20" stroke="var(--ink)" stroke-width="2" stroke-linecap="round"/>
+      </svg>
+      <span class="name" style="font-family:var(--mono);font-weight:700;letter-spacing:-.02em">c<b style="color:var(--accent)">a</b>ggle</span>
+    </div>
+    <div class="auth-tag">
+      <span class="kicker accent">DECISION-TREE COMPETITIONS</span>
+      <h1 style="margin-top:14px">트리를 키우고,<br/><em>리더보드</em>를 오르세요.</h1>
+      <p>손으로 직접 의사결정 규칙을 설계하고, 보이지 않는 데이터에 대한 정확도로 순위를 겨룹니다.</p>
+    </div>
+    <div class="tree-wrap">
+      <svg viewBox="0 0 560 320" width="100%" aria-label="decision tree diagram">
+        <g>
+          <path class="tree-edge" d="M280 76 C 280 110, 130 110, 130 138"/>
+          <path class="tree-edge" d="M280 76 C 280 110, 400 110, 400 138"/>
+          <path class="tree-edge" d="M400 184 C 400 218, 300 218, 300 246"/>
+          <path class="tree-edge" d="M400 184 C 400 218, 500 218, 500 246"/>
+          <text class="tree-edge-lab" x="188" y="108">Na_to_K &ge; 15</text>
+          <text class="tree-edge-lab" x="340" y="108">그 외</text>
+          <text class="tree-edge-lab" x="322" y="216">BP = LOW</text>
+          <text class="tree-edge-lab" x="448" y="216">그 외</text>
+        </g>
+        <g class="tree-node root"><rect x="205" y="30" width="150" height="46" rx="7"/>
+          <text class="tree-label" x="280" y="52" text-anchor="middle">Na_to_K &ge; 15</text>
+          <text class="tree-sub" x="280" y="67" text-anchor="middle">gini 0.699 · n=200</text></g>
+        <g class="tree-node leaf-c1"><rect x="55" y="138" width="150" height="46" rx="7"/>
+          <text class="tree-label" x="130" y="160" text-anchor="middle">Drug Y</text>
+          <text class="tree-sub" x="130" y="175" text-anchor="middle">n=91 · pure</text></g>
+        <g class="tree-node"><rect x="325" y="138" width="150" height="46" rx="7"/>
+          <text class="tree-label" x="400" y="160" text-anchor="middle">BP = ?</text>
+          <text class="tree-sub" x="400" y="175" text-anchor="middle">gini 0.72 · n=109</text></g>
+        <g class="tree-node leaf-c2"><rect x="225" y="246" width="150" height="46" rx="7"/>
+          <text class="tree-label" x="300" y="268" text-anchor="middle">Drug C / X</text>
+          <text class="tree-sub" x="300" y="283" text-anchor="middle">BP=LOW</text></g>
+        <g class="tree-node leaf-c3"><rect x="425" y="246" width="150" height="46" rx="7"/>
+          <text class="tree-label" x="500" y="268" text-anchor="middle">Drug A / B / X</text>
+          <text class="tree-sub" x="500" y="283" text-anchor="middle">BP=HIGH/NORMAL</text></g>
+      </svg>
+    </div>
+    <div class="auth-term">
+      <div class="term">
+        <div class="term-bar">
+          <span class="dot" style="background:#e05a4a"></span>
+          <span class="dot" style="background:#e6b450"></span>
+          <span class="dot" style="background:#5aa86a"></span>
+          <span style="margin-left:6px">caggle — drug200 challenge</span>
+        </div>
+        <div class="term-body"><span class="prompt">$</span> caggle score <span class="c-str">--mode practice</span>
+<span class="c-key">accuracy</span> = <span class="c-num">0.94</span>   node_count=<span class="c-num">7</span>   macro_f1=<span class="c-num">0.931</span>
+<span class="c-str">▲ +0.06 vs baseline</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- RIGHT FORM -->
+  <section class="auth-form">
+    <div class="auth-card">
+      <!-- Login view -->
+      <div id="view-login">
+        <span class="tag accent" style="margin-bottom:18px">로그인</span>
+        <h2>다시 오신 걸 환영해요</h2>
+        <p class="sub">계정에 로그인하고 대회를 이어가세요.</p>
+        <div id="login-error" class="error-msg" style="margin-top:16px"></div>
+        <form class="stack" style="margin-top:24px" onsubmit="doLogin(event)">
+          <div class="field">
+            <label>사용자명</label>
+            <input id="login-user" class="input" type="text" placeholder="username" autocomplete="username"/>
+          </div>
+          <div class="field">
+            <div class="row-between" style="margin-bottom:7px">
+              <label style="margin:0">비밀번호</label>
+            </div>
+            <input id="login-pass" class="input" type="password" placeholder="••••••••" autocomplete="current-password"/>
+          </div>
+          <label class="checkbox"><input type="checkbox" checked/> 로그인 상태 유지</label>
+          <button type="submit" class="btn btn-primary btn-block" style="margin-top:2px">로그인 →</button>
+        </form>
+        <p class="foot">계정이 없으신가요? <span class="link" onclick="switchView('register')">회원가입</span></p>
+      </div>
+
+      <!-- Register view -->
+      <div id="view-register" style="display:none">
+        <span class="tag" style="margin-bottom:18px">회원가입</span>
+        <h2>새 계정 만들기</h2>
+        <p class="sub">사용자명과 비밀번호를 정하세요.</p>
+        <div id="reg-error" class="error-msg" style="margin-top:16px"></div>
+        <form class="stack" style="margin-top:24px" onsubmit="doRegister(event)">
+          <div class="field">
+            <label>사용자명</label>
+            <input id="reg-user" class="input" type="text" placeholder="username (영문/숫자)" autocomplete="username"/>
+          </div>
+          <div class="field">
+            <label>비밀번호</label>
+            <input id="reg-pass" class="input" type="password" placeholder="비밀번호 (6자 이상)" autocomplete="new-password"/>
+          </div>
+          <div class="field">
+            <label>비밀번호 확인</label>
+            <input id="reg-pass2" class="input" type="password" placeholder="동일하게 입력" autocomplete="new-password"/>
+          </div>
+          <button type="submit" class="btn btn-primary btn-block">계정 만들기 →</button>
+        </form>
+        <p class="foot">이미 계정이 있나요? <span class="link" onclick="switchView('login')">로그인</span></p>
+        <p class="foot" style="margin-top:6px;font-size:12px;color:var(--ink-3)">어드민: username <b>admin</b> / pw <b>admin123</b></p>
+      </div>
+    </div>
+  </section>
+</div>
+
+<script>
+function switchView(v) {
+  document.getElementById('view-login').style.display = v==='login' ? '' : 'none';
+  document.getElementById('view-register').style.display = v==='register' ? '' : 'none';
+}
+
+function getUsers() {
+  try { return JSON.parse(localStorage.getItem('caggle.users') || '{}'); } catch { return {}; }
+}
+function saveUsers(u) { localStorage.setItem('caggle.users', JSON.stringify(u)); }
+
+// Seed admin account
+(function() {
+  const users = getUsers();
+  if (!users['admin']) { users['admin'] = { pw: 'admin123', role: 'admin' }; saveUsers(users); }
+})();
+
+function doLogin(e) {
+  e.preventDefault();
+  const u = document.getElementById('login-user').value.trim();
+  const p = document.getElementById('login-pass').value;
+  const err = document.getElementById('login-error');
+  const users = getUsers();
+  if (!users[u] || users[u].pw !== p) {
+    err.textContent = '사용자명 또는 비밀번호가 올바르지 않습니다.';
+    err.style.display = '';
+    return;
+  }
+  err.style.display = 'none';
+  const session = { username: u, role: users[u].role || 'student' };
+  localStorage.setItem('caggle.session', JSON.stringify(session));
+  const next = new URLSearchParams(location.search).get('next');
+  location.href = next || 'simulate.html';
+}
+
+function doRegister(e) {
+  e.preventDefault();
+  const u = document.getElementById('reg-user').value.trim();
+  const p = document.getElementById('reg-pass').value;
+  const p2 = document.getElementById('reg-pass2').value;
+  const err = document.getElementById('reg-error');
+  if (!u || !/^[a-zA-Z0-9_]{2,20}$/.test(u)) {
+    err.textContent = '사용자명은 영문·숫자·밑줄 2~20자여야 합니다.'; err.style.display=''; return;
+  }
+  if (p.length < 6) { err.textContent = '비밀번호는 6자 이상이어야 합니다.'; err.style.display=''; return; }
+  if (p !== p2) { err.textContent = '비밀번호가 일치하지 않습니다.'; err.style.display=''; return; }
+  const users = getUsers();
+  if (users[u]) { err.textContent = '이미 사용 중인 사용자명입니다.'; err.style.display=''; return; }
+  err.style.display = 'none';
+  users[u] = { pw: p, role: 'student' };
+  saveUsers(users);
+  const session = { username: u, role: 'student' };
+  localStorage.setItem('caggle.session', JSON.stringify(session));
+  location.href = 'simulate.html';
+}
+
+// Redirect if already logged in
+try {
+  const s = JSON.parse(localStorage.getItem('caggle.session') || 'null');
+  if (s) location.href = 'simulate.html';
+} catch {}
+</script>
+
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" crossorigin="anonymous"></script>
+<script type="text/babel" src="pages/assets/tweaks-panel.jsx"></script>
+<script type="text/babel" src="pages/assets/accent-tweak.jsx"></script>
+</body>
+</html>

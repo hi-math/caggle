@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>caggle — 연습장</title>
+<link rel="stylesheet" href="assets/styles.css" />
+<script>
+  try { var h = localStorage.getItem('caggle.accentH'); if (h != null) document.documentElement.style.setProperty('--accent-h', h); } catch (e) {}
+</script>
+<style>
+  /* hero */
+  .hero { display: grid; grid-template-columns: 1.3fr 1fr; gap: 30px; align-items: center; margin-bottom: 34px; }
+  .hero h1 { font-size: 34px; letter-spacing: -.025em; margin-top: 14px; }
+  .hero h1 em { font-style: normal; color: var(--accent); }
+  .hero p { color: var(--ink-2); font-size: 15.5px; margin-top: 14px; max-width: 480px; }
+  .hero-stats { display: flex; gap: 26px; margin-top: 24px; }
+  .hero-stats .s .v { font-family: var(--mono); font-weight: 700; font-size: 22px; }
+  .hero-stats .s .l { font-family: var(--mono); font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-3); margin-top: 2px; }
+
+  /* tutorial track */
+  .track { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0; }
+  .step { position: relative; padding: 20px 22px; border-right: 1px dashed var(--border-2); }
+  .step:last-child { border-right: none; }
+  .step .n { width: 30px; height: 30px; border-radius: 8px; display: grid; place-items: center; font-family: var(--mono); font-weight: 700; font-size: 13px; background: var(--accent-soft-2); color: var(--accent-strong); border: 1px solid var(--accent-border); }
+  .step.done .n { background: var(--accent); color: #fff; border-color: var(--accent); }
+  .step h3 { font-size: 15px; margin-top: 14px; }
+  .step p { font-size: 13px; color: var(--ink-2); margin-top: 5px; }
+
+  /* problem grid */
+  .sec-head { display: flex; align-items: flex-end; justify-content: space-between; margin: 40px 0 16px; }
+  .filters { display: flex; gap: 8px; }
+  .pgrid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
+  .pcard { display: flex; flex-direction: column; transition: box-shadow .14s, transform .14s, border-color .14s; }
+  .pcard:hover { box-shadow: var(--shadow); transform: translateY(-2px); border-color: var(--border-2); }
+  .pcard .thumb {
+    height: 120px; border-bottom: 1px solid var(--border); border-radius: 8px 8px 0 0;
+    background: var(--surface-2);
+    background-image: linear-gradient(var(--bg-grid) 1px, transparent 1px), linear-gradient(90deg, var(--bg-grid) 1px, transparent 1px);
+    background-size: 22px 22px; display: grid; place-items: center; overflow: hidden;
+  }
+  .pcard .body { padding: 16px 18px; display: flex; flex-direction: column; flex: 1; }
+  .pcard .title { font-size: 16px; font-weight: 600; }
+  .pcard .meta { display: flex; gap: 14px; margin-top: 10px; font-family: var(--mono); font-size: 11.5px; color: var(--ink-3); }
+  .pcard .meta b { color: var(--ink-2); font-weight: 600; }
+  .pcard .foot { display: flex; align-items: center; justify-content: space-between; margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--border); }
+  .pcard .best { font-family: var(--mono); }
+  .pcard .best .lab { font-size: 10px; letter-spacing: .07em; text-transform: uppercase; color: var(--ink-3); }
+  .pcard .best .v { font-weight: 700; font-size: 16px; }
+  .diff { display: inline-flex; gap: 3px; align-items: center; }
+  .diff i { width: 6px; height: 12px; border-radius: 2px; background: var(--border-2); }
+  .diff i.on { background: var(--accent); }
+</style>
+</head>
+<body>
+<div class="shell">
+  <!-- TOPBAR -->
+  <header class="topbar">
+    <a class="brand" href="Practice.html">
+      <svg class="logo" viewBox="0 0 32 32" fill="none">
+        <circle cx="16" cy="6" r="4" fill="var(--accent)"/>
+        <circle cx="7" cy="24" r="4" fill="none" stroke="var(--ink)" stroke-width="2"/>
+        <circle cx="25" cy="24" r="4" fill="none" stroke="var(--ink)" stroke-width="2"/>
+        <path d="M16 10 L7 20 M16 10 L25 20" stroke="var(--ink)" stroke-width="2" stroke-linecap="round"/>
+      </svg>
+      <span class="name">c<b>a</b>ggle</span>
+    </a>
+    <nav class="nav">
+      <a href="Practice.html" class="active">연습장</a>
+      <a href="Workspace.html">대회</a>
+      <a href="Leaderboard.html">리더보드</a>
+      <a href="#">학습 자료</a>
+    </nav>
+    <div class="spacer"></div>
+    <div class="searchbox">
+      <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="7" cy="7" r="5"/><path d="M11 11l3 3"/></svg>
+      데이터셋 검색…
+      <kbd>⌘K</kbd>
+    </div>
+    <div class="avatar">JY</div>
+  </header>
+
+  <main class="page" data-screen-label="연습장">
+    <!-- HERO -->
+    <section class="hero">
+      <div>
+        <span class="kicker accent">SANDBOX · 점수 미반영</span>
+        <h1>마음껏 실험하는 <em>연습장</em></h1>
+        <p>리더보드 부담 없이 의사결정나무를 익혀보세요. 제출 횟수는 무제한이고, 모든 데이터셋에는 정답 검증과 즉시 채점이 제공됩니다.</p>
+        <div class="hero-stats">
+          <div class="s"><div class="v">12</div><div class="l">연습 데이터셋</div></div>
+          <div class="s"><div class="v">∞</div><div class="l">제출 횟수</div></div>
+          <div class="s"><div class="v">4</div><div class="l">완료한 트랙</div></div>
+        </div>
+      </div>
+      <div class="card card-pad">
+        <span class="kicker">YOUR PROGRESS</span>
+        <div style="display:flex; align-items:baseline; gap:8px; margin-top:10px">
+          <span class="mono" style="font-size:34px; font-weight:700">68%</span>
+          <span class="muted" style="font-size:13px">입문 트랙 진행도</span>
+        </div>
+        <div class="bar" style="margin:14px 0 18px"><i style="width:68%"></i></div>
+        <div style="display:flex; justify-content:space-between; font-family:var(--mono); font-size:12px; color:var(--ink-2)">
+          <span>해결 <b style="color:var(--ink)">8</b> / 12</span>
+          <span>최고 점수 <b style="color:var(--accent-strong)">0.942</b></span>
+        </div>
+      </div>
+    </section>
+
+    <!-- TUTORIAL TRACK -->
+    <div class="between" style="margin-bottom:14px">
+      <h2>입문 튜토리얼 트랙</h2>
+      <a class="link mono" style="color:var(--accent-strong); font-size:13px; font-weight:600" href="Workspace.html">이어서 학습 →</a>
+    </div>
+    <div class="card">
+      <div class="track">
+        <div class="step done"><div class="n">01</div><h3>트리란 무엇인가</h3><p>분기·노드·리프 개념과 gini 불순도를 직관적으로 이해합니다.</p></div>
+        <div class="step done"><div class="n">02</div><h3>첫 모델 학습</h3><p>Iris 데이터로 DecisionTreeClassifier를 학습하고 제출합니다.</p></div>
+        <div class="step done"><div class="n">03</div><h3>과적합과 가지치기</h3><p>max_depth·min_samples로 트리를 다듬는 방법을 배웁니다.</p></div>
+        <div class="step"><div class="n">04</div><h3>특성 중요도</h3><p>어떤 특성이 분기에 기여했는지 해석하고 개선합니다.</p></div>
+      </div>
+    </div>
+
+    <!-- PROBLEMS -->
+    <div class="sec-head">
+      <div>
+        <h2>연습 데이터셋</h2>
+        <p class="muted" style="margin-top:4px; font-size:14px">난이도별로 정렬된 분류·회귀 문제. 클릭하면 작업 스페이스로 이동합니다.</p>
+      </div>
+      <div class="filters">
+        <button class="chip on">전체</button>
+        <button class="chip">분류</button>
+        <button class="chip">회귀</button>
+        <button class="chip">미해결</button>
+      </div>
+    </div>
+
+    <div class="pgrid" id="pgrid"></div>
+  </main>
+</div>
+
+<template id="mini-tree">
+  <svg viewBox="0 0 220 96" width="190" aria-hidden="true">
+    <path class="tree-edge" d="M110 20 C110 36, 60 36, 60 50"/>
+    <path class="tree-edge" d="M110 20 C110 36, 160 36, 160 50"/>
+    <path class="tree-edge" d="M160 64 C160 76, 130 76, 130 84" />
+    <path class="tree-edge" d="M160 64 C160 76, 190 76, 190 84" />
+    <g class="tree-node root"><rect x="86" y="8" width="48" height="16" rx="4"/></g>
+    <g class="tree-node leaf-c1"><rect x="36" y="48" width="48" height="16" rx="4"/></g>
+    <g class="tree-node"><rect x="136" y="48" width="48" height="16" rx="4"/></g>
+    <g class="tree-node leaf-c2"><rect x="106" y="82" width="48" height="14" rx="4"/></g>
+    <g class="tree-node leaf-c3"><rect x="166" y="82" width="48" height="14" rx="4"/></g>
+  </svg>
+</template>
+
+<script>
+  const PROBLEMS = [
+    { name: 'Iris 품종 분류', task: '분류', rows: '150', feat: '4', metric: 'f1_macro', diff: 1, best: '0.973', solved: true },
+    { name: 'Titanic 생존 예측', task: '분류', rows: '891', feat: '11', metric: 'accuracy', diff: 2, best: '0.812', solved: true },
+    { name: 'Wine 등급 분류', task: '분류', rows: '178', feat: '13', metric: 'f1_macro', diff: 2, best: '0.944', solved: true },
+    { name: 'Penguins 종 분류', task: '분류', rows: '344', feat: '7', metric: 'accuracy', diff: 1, best: '0.985', solved: true },
+    { name: 'Mushroom 식용 판별', task: '분류', rows: '8,124', feat: '22', metric: 'f1_macro', diff: 3, best: '—', solved: false },
+    { name: 'Bike 대여량 예측', task: '회귀', rows: '17,389', feat: '12', metric: 'rmsle', diff: 3, best: '—', solved: false },
+  ];
+  const grid = document.getElementById('pgrid');
+  const tpl = document.getElementById('mini-tree').innerHTML;
+  PROBLEMS.forEach(p => {
+    const dots = [1,2,3].map(i => `<i class="${i <= p.diff ? 'on' : ''}"></i>`).join('');
+    const el = document.createElement('a');
+    el.className = 'card pcard';
+    el.href = 'Workspace.html';
+    el.innerHTML = `
+      <div class="thumb">${tpl}</div>
+      <div class="body">
+        <div class="between">
+          <span class="title">${p.name}</span>
+          ${p.solved ? '<span class="tag accent" style="height:20px">해결</span>' : ''}
+        </div>
+        <div class="meta">
+          <span class="tag dot ${p.task==='회귀'?'dot-c3':'dot-c2'}">${p.task}</span>
+          <span><b>${p.rows}</b> rows</span>
+          <span><b>${p.feat}</b> feat</span>
+        </div>
+        <div class="foot">
+          <div class="best">
+            <div class="lab">내 최고 · ${p.metric}</div>
+            <div class="v" style="${p.solved?'color:var(--accent-strong)':'color:var(--ink-4)'}">${p.best}</div>
+          </div>
+          <div style="text-align:right">
+            <div class="lab mono" style="font-size:10px; letter-spacing:.07em; text-transform:uppercase; color:var(--ink-3); margin-bottom:5px">난이도</div>
+            <div class="diff">${dots}</div>
+          </div>
+        </div>
+      </div>`;
+    grid.appendChild(el);
+  });
+</script>
+
+<!-- Tweaks -->
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script type="text/babel" src="assets/tweaks-panel.jsx"></script>
+<script type="text/babel" src="assets/accent-tweak.jsx"></script>
+</body>
+</html>

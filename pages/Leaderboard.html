@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>caggle — 리더보드</title>
+<link rel="stylesheet" href="assets/styles.css" />
+<script>
+  try { var h = localStorage.getItem('caggle.accentH'); if (h != null) document.documentElement.style.setProperty('--accent-h', h); } catch (e) {}
+</script>
+<style>
+  .lb-head { display: flex; align-items: flex-end; justify-content: space-between; margin-bottom: 22px; }
+  .lb-head h1 { font-size: 28px; letter-spacing: -.02em; }
+  .seg-toggle { display: flex; border: 1px solid var(--border-2); border-radius: var(--radius-sm); overflow: hidden; }
+  .seg-toggle button { height: 38px; padding: 0 18px; border: none; background: var(--surface); font-family: var(--mono); font-size: 13px; color: var(--ink-2); border-right: 1px solid var(--border); }
+  .seg-toggle button:last-child { border-right: none; }
+  .seg-toggle button.on { background: var(--ink); color: #fff; }
+
+  /* podium */
+  .podium { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 24px; }
+  .pod { position: relative; padding: 20px; overflow: hidden; }
+  .pod.first { border-color: var(--accent-border); box-shadow: 0 0 0 1px var(--accent-border), var(--shadow); }
+  .pod .rk { position: absolute; right: 16px; top: 14px; font-family: var(--mono); font-size: 46px; font-weight: 700; color: var(--surface-3); line-height: 1; }
+  .pod .team { display: flex; align-items: center; gap: 10px; }
+  .pod .ava { width: 38px; height: 38px; border-radius: 9px; display: grid; place-items: center; font-family: var(--mono); font-weight: 700; font-size: 14px; }
+  .pod .name { font-weight: 600; font-size: 15px; }
+  .pod .who { font-family: var(--mono); font-size: 11.5px; color: var(--ink-3); }
+  .pod .score { font-family: var(--mono); font-weight: 700; font-size: 30px; margin-top: 16px; letter-spacing: -.02em; }
+  .pod .lab { font-family: var(--mono); font-size: 10.5px; letter-spacing: .07em; text-transform: uppercase; color: var(--ink-3); }
+
+  /* layout */
+  .lb-grid { display: grid; grid-template-columns: 1fr 312px; gap: 20px; align-items: start; }
+
+  .you-row td { background: var(--accent-soft); }
+  .you-row:hover td { background: var(--accent-soft); }
+  .chg { font-family: var(--mono); font-size: 12px; display: inline-flex; align-items: center; gap: 3px; }
+  .chg.up { color: oklch(0.55 0.15 150); } .chg.dn { color: var(--accent-strong); } .chg.flat { color: var(--ink-4); }
+  .tname { display: flex; align-items: center; gap: 11px; }
+  .tname .ava { width: 30px; height: 30px; border-radius: 8px; display: grid; place-items: center; font-family: var(--mono); font-weight: 700; font-size: 12px; flex: none; }
+  .tname .members { font-family: var(--mono); font-size: 11px; color: var(--ink-3); }
+
+  .hist { display: flex; align-items: flex-end; gap: 4px; height: 90px; }
+  .hist .b { flex: 1; background: var(--surface-3); border-radius: 3px 3px 0 0; }
+  .hist .b.hot { background: var(--accent); }
+  .dist-x { display: flex; justify-content: space-between; font-family: var(--mono); font-size: 10.5px; color: var(--ink-3); margin-top: 8px; }
+</style>
+</head>
+<body>
+<div class="shell">
+  <!-- TOPBAR -->
+  <header class="topbar">
+    <a class="brand" href="Practice.html">
+      <svg class="logo" viewBox="0 0 32 32" fill="none">
+        <circle cx="16" cy="6" r="4" fill="var(--accent)"/>
+        <circle cx="7" cy="24" r="4" fill="none" stroke="var(--ink)" stroke-width="2"/>
+        <circle cx="25" cy="24" r="4" fill="none" stroke="var(--ink)" stroke-width="2"/>
+        <path d="M16 10 L7 20 M16 10 L25 20" stroke="var(--ink)" stroke-width="2" stroke-linecap="round"/>
+      </svg>
+      <span class="name">c<b>a</b>ggle</span>
+    </a>
+    <nav class="nav">
+      <a href="Practice.html">연습장</a>
+      <a href="Workspace.html">대회</a>
+      <a href="Leaderboard.html" class="active">리더보드</a>
+      <a href="#">학습 자료</a>
+    </nav>
+    <div class="spacer"></div>
+    <div class="searchbox">
+      <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="7" cy="7" r="5"/><path d="M11 11l3 3"/></svg>
+      팀 검색…
+      <kbd>⌘K</kbd>
+    </div>
+    <div class="avatar">JY</div>
+  </header>
+
+  <main class="page wide" data-screen-label="리더보드">
+    <div class="lb-head">
+      <div>
+        <span class="kicker accent">은행 고객 이탈 예측 챌린지</span>
+        <h1 style="margin-top:8px">리더보드</h1>
+        <div class="ws-chips" style="display:flex; gap:10px; margin-top:12px">
+          <span class="tag">평가지표 · <b style="color:var(--ink);margin-left:4px">f1_macro</b></span>
+          <span class="tag">1,284 팀 · 9,612 제출</span>
+          <span class="tag">마감까지 <b style="color:var(--accent-strong);margin-left:4px">04일 12:38</b></span>
+        </div>
+      </div>
+      <div class="seg-toggle">
+        <button class="on">Public</button>
+        <button>Private</button>
+      </div>
+    </div>
+
+    <!-- PODIUM -->
+    <div class="podium">
+      <div class="card pod first">
+        <div class="rk">1</div>
+        <div class="team">
+          <div class="ava medal g">🌳</div>
+          <div><div class="name">gini_gang</div><div class="who">@minseo · 외 2명</div></div>
+        </div>
+        <div class="lab" style="margin-top:14px">best f1_macro</div>
+        <div class="score" style="color:var(--accent-strong)">0.9041</div>
+      </div>
+      <div class="card pod">
+        <div class="rk">2</div>
+        <div class="team">
+          <div class="ava medal s">DT</div>
+          <div><div class="name">depth_charge</div><div class="who">@hyunwoo · 솔로</div></div>
+        </div>
+        <div class="lab" style="margin-top:14px">best f1_macro</div>
+        <div class="score">0.9018</div>
+      </div>
+      <div class="card pod">
+        <div class="rk">3</div>
+        <div class="team">
+          <div class="ava medal b">XB</div>
+          <div><div class="name">leaf_it_to_us</div><div class="who">@jiwon · 외 3명</div></div>
+        </div>
+        <div class="lab" style="margin-top:14px">best f1_macro</div>
+        <div class="score">0.8997</div>
+      </div>
+    </div>
+
+    <div class="lb-grid">
+      <!-- TABLE -->
+      <div class="card">
+        <table class="table">
+          <thead>
+            <tr>
+              <th style="width:54px">#</th>
+              <th style="width:48px">변동</th>
+              <th>팀</th>
+              <th style="width:120px">점수</th>
+              <th style="width:90px">제출</th>
+              <th style="width:120px">최근 7일</th>
+              <th style="width:80px">마지막</th>
+            </tr>
+          </thead>
+          <tbody id="lbbody"></tbody>
+        </table>
+      </div>
+
+      <!-- SIDEBAR -->
+      <aside class="stack" style="display:flex; flex-direction:column; gap:18px">
+        <div class="card card-pad" style="border-color:var(--accent-border)">
+          <span class="kicker accent">내 순위</span>
+          <div style="display:flex; align-items:baseline; gap:8px; margin:8px 0 4px">
+            <span class="mono" style="font-size:32px; font-weight:700">#14</span>
+            <span class="chg up">▲ 6</span>
+          </div>
+          <div class="muted" style="font-size:13px">상위 1.1% · gini_gardener</div>
+          <hr class="hr" style="margin:14px 0" />
+          <div class="side-stat" style="display:flex; justify-content:space-between; padding:6px 0; font-size:13.5px"><span class="muted">내 최고 점수</span><b class="mono" style="color:var(--accent-strong)">0.8841</b></div>
+          <div class="side-stat" style="display:flex; justify-content:space-between; padding:6px 0; font-size:13.5px"><span class="muted">1위까지</span><b class="mono">-0.0200</b></div>
+          <a class="btn btn-primary btn-block btn-sm" href="Workspace.html" style="margin-top:14px">작업 스페이스로 →</a>
+        </div>
+
+        <div class="card card-pad">
+          <span class="kicker">점수 분포</span>
+          <div class="hist" id="hist" style="margin-top:16px"></div>
+          <div class="dist-x"><span>0.74</span><span>0.82</span><span>0.90</span></div>
+          <p class="muted3" style="font-size:11.5px; font-family:var(--mono); margin-top:12px; line-height:1.5">중앙값 0.831 · 상위 10% 컷 0.871. 빨간 막대가 내 위치입니다.</p>
+        </div>
+
+        <div class="card card-pad">
+          <span class="kicker">규칙 요약</span>
+          <ul style="margin:12px 0 0; padding-left:18px; font-size:13px; color:var(--ink-2); line-height:1.7">
+            <li>트리 계열 모델만 허용 (DT/RF/GBM)</li>
+            <li>하루 최대 5회 제출</li>
+            <li>최종 채점은 private 70% 기준</li>
+          </ul>
+        </div>
+      </aside>
+    </div>
+  </main>
+</div>
+
+<script>
+  const HUES = [25, 150, 250, 80];
+  const TEAMS = [
+    { rank:1, chg:'up', d:'1', team:'gini_gang', m:'3명', score:'0.9041', subs:'87' },
+    { rank:2, chg:'up', d:'2', team:'depth_charge', m:'솔로', score:'0.9018', subs:'112' },
+    { rank:3, chg:'dn', d:'1', team:'leaf_it_to_us', m:'4명', score:'0.8997', subs:'64' },
+    { rank:4, chg:'flat', d:'', team:'overfit_oops', m:'2명', score:'0.8975', subs:'140' },
+    { rank:5, chg:'up', d:'3', team:'pruners', m:'솔로', score:'0.8961', subs:'53' },
+    { rank:6, chg:'dn', d:'2', team:'entropy_now', m:'3명', score:'0.8944', subs:'98' },
+    { rank:7, chg:'up', d:'1', team:'branch_managers', m:'2명', score:'0.8930', subs:'71' },
+    { rank:8, chg:'flat', d:'', team:'random_forest_kr', m:'5명', score:'0.8921', subs:'120' },
+    { rank:9, chg:'up', d:'4', team:'split_decision', m:'솔로', score:'0.8908', subs:'42' },
+    { rank:10, chg:'dn', d:'3', team:'rootkit', m:'2명', score:'0.8894', subs:'88' },
+    { rank:11, chg:'up', d:'1', team:'cart_blanche', m:'솔로', score:'0.8881', subs:'37' },
+    { rank:12, chg:'flat', d:'', team:'bagging_area', m:'3명', score:'0.8869', subs:'59' },
+    { rank:13, chg:'up', d:'2', team:'maple_ml', m:'2명', score:'0.8855', subs:'64' },
+    { rank:14, chg:'up', d:'6', team:'gini_gardener', m:'솔로', score:'0.8841', subs:'46', you:true },
+    { rank:15, chg:'dn', d:'4', team:'leaf_lovers', m:'2명', score:'0.8829', subs:'73' },
+  ];
+  function spark(seed) {
+    let pts = [], y = 30 - (seed % 5) * 2;
+    for (let i=0;i<8;i++){ y += (Math.sin(seed+i*1.3)*6); y = Math.max(6, Math.min(34, y)); pts.push(`${i*14},${(40-y).toFixed(0)}`); }
+    return `<svg width="98" height="34" viewBox="0 0 98 40"><polyline points="${pts.join(' ')}" fill="none" stroke="var(--accent)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+  }
+  const chgIcon = { up:'▲', dn:'▼', flat:'–' };
+  const tb = document.getElementById('lbbody');
+  TEAMS.forEach((t, i) => {
+    const tr = document.createElement('tr');
+    if (t.you) tr.className = 'you-row';
+    const medal = t.rank<=3 ? `medal ${['g','s','b'][t.rank-1]}` : '';
+    const avaStyle = t.rank<=3 ? '' : `style="background:oklch(0.95 0.045 ${HUES[i%4]}); color:var(--ink); border:1px solid oklch(0.85 0.08 ${HUES[i%4]})"`;
+    tr.innerHTML = `
+      <td><span class="rank">${t.rank}</span></td>
+      <td><span class="chg ${t.chg}">${chgIcon[t.chg]}${t.d}</span></td>
+      <td>
+        <div class="tname">
+          <div class="ava ${medal}" ${medal?'':avaStyle}>${t.team.slice(0,2).toUpperCase()}</div>
+          <div>
+            <div style="font-weight:${t.you?700:600}">${t.team}${t.you?' <span class="tag accent" style="height:18px; font-size:10px">나</span>':''}</div>
+            <div class="members">${t.m}</div>
+          </div>
+        </div>
+      </td>
+      <td><span class="num" style="font-weight:700; font-size:15px; ${t.you?'color:var(--accent-strong)':''}">${t.score}</span></td>
+      <td><span class="num muted">${t.subs}</span></td>
+      <td>${spark(t.rank*3+7)}</td>
+      <td><span class="num muted3" style="font-size:12px">${i%3===0?'2시간':i%3===1?'5시간':'어제'}</span></td>`;
+    tb.appendChild(tr);
+  });
+
+  // histogram
+  const HIST = [2,4,7,11,16,22,29,34,30,24,18,13,21,9,5,2];
+  const myBin = 12;
+  const hv = document.getElementById('hist');
+  const max = Math.max(...HIST);
+  HIST.forEach((v,i)=>{ const b=document.createElement('div'); b.className='b'+(i===myBin?' hot':''); b.style.height=(v/max*100)+'%'; hv.appendChild(b); });
+</script>
+
+<!-- Tweaks -->
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script type="text/babel" src="assets/tweaks-panel.jsx"></script>
+<script type="text/babel" src="assets/accent-tweak.jsx"></script>
+</body>
+</html>

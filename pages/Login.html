@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>caggle — 로그인</title>
+<link rel="stylesheet" href="assets/styles.css" />
+<script>
+  // apply saved accent before paint
+  try { var h = localStorage.getItem('caggle.accentH'); if (h != null) document.documentElement.style.setProperty('--accent-h', h); } catch (e) {}
+</script>
+<style>
+  body { background-image: none; }
+  .auth {
+    min-height: 100vh; display: grid; grid-template-columns: 1.05fr .95fr;
+  }
+  /* ---- left: brand / tree ---- */
+  .auth-brand {
+    position: relative; padding: 48px 56px; display: flex; flex-direction: column;
+    background-color: var(--surface);
+    background-image:
+      linear-gradient(var(--bg-grid) 1px, transparent 1px),
+      linear-gradient(90deg, var(--bg-grid) 1px, transparent 1px);
+    background-size: 30px 30px;
+    border-right: 1px solid var(--border);
+    overflow: hidden;
+  }
+  .auth-brand .brand .name { font-size: 21px; }
+  .auth-brand .brand .logo { width: 34px; height: 34px; }
+  .auth-tag { margin-top: 64px; max-width: 460px; }
+  .auth-tag h1 { font-size: 38px; line-height: 1.12; letter-spacing: -.025em; }
+  .auth-tag h1 em { font-style: normal; color: var(--accent); }
+  .auth-tag p { color: var(--ink-2); font-size: 15.5px; margin-top: 16px; max-width: 400px; }
+  .tree-wrap { margin-top: 30px; align-self: center; width: 100%; max-width: 560px; }
+  .auth-term { margin-top: auto; max-width: 460px; }
+
+  /* ---- right: form ---- */
+  .auth-form { display: grid; place-items: center; padding: 40px; }
+  .auth-card { width: 100%; max-width: 380px; }
+  .auth-card h2 { font-size: 23px; letter-spacing: -.01em; }
+  .auth-card .sub { color: var(--ink-2); margin-top: 6px; font-size: 14px; }
+  .stack { display: flex; flex-direction: column; gap: 16px; }
+  .oauth { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .divider { display: flex; align-items: center; gap: 12px; color: var(--ink-3); font-family: var(--mono); font-size: 11px; letter-spacing: .1em; text-transform: uppercase; }
+  .divider::before, .divider::after { content:""; flex:1; height:1px; background: var(--border); }
+  .row-between { display: flex; align-items: center; justify-content: space-between; }
+  .link { color: var(--accent-strong); font-weight: 600; font-size: 13px; }
+  .link:hover { text-decoration: underline; }
+  .checkbox { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--ink-2); }
+  .checkbox input { width: 15px; height: 15px; accent-color: var(--accent); }
+  .foot { margin-top: 26px; text-align: center; font-size: 13.5px; color: var(--ink-2); }
+  @media (max-width: 900px) { .auth { grid-template-columns: 1fr; } .auth-brand { display: none; } }
+</style>
+</head>
+<body>
+<div class="auth">
+  <!-- LEFT -->
+  <section class="auth-brand" data-screen-label="로그인 / 브랜드">
+    <a class="brand" href="Practice.html">
+      <svg class="logo" viewBox="0 0 32 32" fill="none" aria-hidden="true">
+        <circle cx="16" cy="6" r="4" fill="var(--accent)"/>
+        <circle cx="7" cy="24" r="4" fill="none" stroke="var(--ink)" stroke-width="2"/>
+        <circle cx="25" cy="24" r="4" fill="none" stroke="var(--ink)" stroke-width="2"/>
+        <path d="M16 10 L7 20 M16 10 L25 20" stroke="var(--ink)" stroke-width="2" stroke-linecap="round"/>
+      </svg>
+      <span class="name">c<b>a</b>ggle</span>
+    </a>
+
+    <div class="auth-tag">
+      <span class="kicker accent">DECISION-TREE COMPETITIONS</span>
+      <h1 style="margin-top:14px">트리를 키우고,<br/><em>리더보드</em>를 오르세요.</h1>
+      <p>분기 하나하나가 점수가 됩니다. 데이터를 나누고, 가지를 치고, 가장 깊이 이해하는 모델을 만들어 보세요.</p>
+    </div>
+
+    <div class="tree-wrap">
+      <svg viewBox="0 0 560 320" width="100%" aria-label="decision tree diagram">
+        <!-- edges -->
+        <g>
+          <path class="tree-edge" d="M280 76 C 280 110, 130 110, 130 138"/>
+          <path class="tree-edge" d="M280 76 C 280 110, 400 110, 400 138"/>
+          <path class="tree-edge" d="M400 184 C 400 218, 300 218, 300 246"/>
+          <path class="tree-edge" d="M400 184 C 400 218, 500 218, 500 246"/>
+          <text class="tree-edge-lab" x="188" y="108">true</text>
+          <text class="tree-edge-lab" x="346" y="108">false</text>
+          <text class="tree-edge-lab" x="330" y="216">≤ 1.75</text>
+          <text class="tree-edge-lab" x="452" y="216">&gt; 1.75</text>
+        </g>
+        <!-- root -->
+        <g class="tree-node root">
+          <rect x="205" y="30" width="150" height="46" rx="7"/>
+          <text class="tree-label"  x="280" y="52" text-anchor="middle">petal_len ≤ 2.45</text>
+          <text class="tree-sub"    x="280" y="67" text-anchor="middle">gini 0.667 · n=150</text>
+        </g>
+        <!-- leaf setosa -->
+        <g class="tree-node leaf-c1">
+          <rect x="55" y="138" width="150" height="46" rx="7"/>
+          <text class="tree-label" x="130" y="160" text-anchor="middle">setosa</text>
+          <text class="tree-sub"   x="130" y="175" text-anchor="middle">gini 0.0 · n=50</text>
+        </g>
+        <!-- internal -->
+        <g class="tree-node">
+          <rect x="325" y="138" width="150" height="46" rx="7"/>
+          <text class="tree-label" x="400" y="160" text-anchor="middle">petal_wid ≤ 1.75</text>
+          <text class="tree-sub"   x="400" y="175" text-anchor="middle">gini 0.5 · n=100</text>
+        </g>
+        <!-- leaf versicolor -->
+        <g class="tree-node leaf-c2">
+          <rect x="225" y="246" width="150" height="46" rx="7"/>
+          <text class="tree-label" x="300" y="268" text-anchor="middle">versicolor</text>
+          <text class="tree-sub"   x="300" y="283" text-anchor="middle">gini 0.168 · n=54</text>
+        </g>
+        <!-- leaf virginica -->
+        <g class="tree-node leaf-c3">
+          <rect x="425" y="246" width="150" height="46" rx="7"/>
+          <text class="tree-label" x="500" y="268" text-anchor="middle">virginica</text>
+          <text class="tree-sub"   x="500" y="283" text-anchor="middle">gini 0.043 · n=46</text>
+        </g>
+      </svg>
+    </div>
+
+    <div class="auth-term">
+      <div class="term">
+        <div class="term-bar">
+          <span class="dot" style="background:#e05a4a"></span>
+          <span class="dot" style="background:#e6b450"></span>
+          <span class="dot" style="background:#5aa86a"></span>
+          <span style="margin-left:6px">caggle-runner — train.py</span>
+        </div>
+        <div class="term-body"><span class="prompt">$</span> caggle submit <span class="c-str">--model tree</span>
+<span class="c-com"># fitting DecisionTreeClassifier(max_depth=<span class="c-num">6</span>)</span>
+<span class="c-com">→ validation</span> <span class="c-key">f1_macro</span> = <span class="c-num">0.9183</span>  <span class="c-str">▲ +0.004</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- RIGHT -->
+  <section class="auth-form" data-screen-label="로그인 / 폼">
+    <div class="auth-card">
+      <span class="tag accent" style="margin-bottom:18px">로그인</span>
+      <h2>다시 오신 걸 환영해요</h2>
+      <p class="sub">계정에 로그인하고 진행 중인 대회를 이어가세요.</p>
+
+      <div class="oauth" style="margin-top:26px">
+        <button class="btn btn-ghost btn-block">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82a7.5 7.5 0 0 1 2-.27c.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8Z"/></svg>
+          GitHub
+        </button>
+        <button class="btn btn-ghost btn-block">
+          <svg width="16" height="16" viewBox="0 0 16 16"><path fill="#4285F4" d="M15.68 8.18c0-.57-.05-1.11-.15-1.64H8v3.09h4.3a3.68 3.68 0 0 1-1.6 2.42v2h2.59c1.51-1.39 2.39-3.45 2.39-5.87Z"/><path fill="#34A853" d="M8 16c2.16 0 3.97-.72 5.29-1.94l-2.59-2c-.72.48-1.63.77-2.7.77-2.08 0-3.84-1.4-4.47-3.29H.85v2.07A8 8 0 0 0 8 16Z"/><path fill="#FBBC05" d="M3.53 9.53A4.8 4.8 0 0 1 3.27 8c0-.53.09-1.05.26-1.53V4.4H.85A8 8 0 0 0 0 8c0 1.29.31 2.51.85 3.6l2.68-2.07Z"/><path fill="#EA4335" d="M8 3.18c1.17 0 2.23.4 3.06 1.2l2.29-2.29A7.99 7.99 0 0 0 .85 4.4l2.68 2.07C4.16 4.58 5.92 3.18 8 3.18Z"/></svg>
+          Google
+        </button>
+      </div>
+
+      <div class="divider" style="margin:20px 0">또는 이메일</div>
+
+      <form class="stack" onsubmit="return false">
+        <div class="field">
+          <label>이메일</label>
+          <input class="input" type="email" placeholder="you@university.ac.kr" />
+        </div>
+        <div class="field">
+          <div class="row-between" style="margin-bottom:7px">
+            <label style="margin:0">비밀번호</label>
+            <a class="link" href="#">잊으셨나요?</a>
+          </div>
+          <input class="input" type="password" placeholder="••••••••••" />
+        </div>
+        <label class="checkbox"><input type="checkbox" checked /> 로그인 상태 유지</label>
+        <a class="btn btn-primary btn-block" href="Practice.html" style="margin-top:2px">로그인 →</a>
+      </form>
+
+      <p class="foot">계정이 없으신가요? <a class="link" href="#">가입하고 첫 대회 시작</a></p>
+    </div>
+  </section>
+</div>
+
+<!-- Tweaks -->
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script type="text/babel" src="assets/tweaks-panel.jsx"></script>
+<script type="text/babel" src="assets/accent-tweak.jsx"></script>
+</body>
+</html>

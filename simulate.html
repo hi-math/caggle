@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>caggle — 시뮬레이션</title>
+<link rel="stylesheet" href="pages/assets/styles.css"/>
+<script>try{var h=localStorage.getItem('caggle.accentH');if(h!=null)document.documentElement.style.setProperty('--accent-h',h)}catch(e){}</script>
+<style>
+.sim-grid{display:grid;grid-template-columns:300px 1fr 280px;gap:20px;align-items:start}
+.ctrl-card{display:flex;flex-direction:column;gap:16px}
+.seg{display:flex;gap:0;border:1px solid var(--border-2);border-radius:var(--radius-sm);overflow:hidden}
+.seg button{flex:1;height:34px;border:none;background:var(--surface);font-family:var(--mono);font-size:12.5px;color:var(--ink-2);border-right:1px solid var(--border)}
+.seg button:last-child{border-right:none}
+.seg button.on{background:var(--ink);color:#fff}
+.dist-bar-wrap{display:flex;flex-direction:column;gap:6px}
+.dist-bar-row{display:grid;grid-template-columns:22px 1fr 38px;align-items:center;gap:8px;font-family:var(--mono);font-size:12px}
+.dist-bar-row .cls{font-weight:700;font-size:13px}
+.dist-bar-track{height:22px;background:var(--surface-3);border-radius:4px;overflow:hidden}
+.dist-bar-fill{height:100%;border-radius:4px;transition:width .3s}
+.dist-bar-val{text-align:right;color:var(--ink-2)}
+.split-arrow{display:flex;align-items:center;justify-content:center;font-size:28px;color:var(--ink-3);padding:60px 0}
+.metric-row{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border)}
+.metric-row:last-child{border-bottom:none}
+.metric-row .k{font-family:var(--mono);font-size:12px;color:var(--ink-2)}
+.metric-row .v{font-family:var(--mono);font-weight:700;font-size:17px}
+.metric-row .v.up{color:oklch(0.55 0.15 150)}
+.gain-big{font-family:var(--mono);font-weight:700;font-size:36px;color:var(--accent-strong);letter-spacing:-.02em}
+select.input{height:40px;padding:0 14px;cursor:pointer}
+</style>
+</head>
+<body>
+<div class="shell">
+  <header class="topbar">
+    <a class="brand" href="simulate.html">
+      <svg class="logo" viewBox="0 0 32 32" fill="none">
+        <circle cx="16" cy="6" r="4" fill="var(--accent)"/>
+        <circle cx="7" cy="24" r="4" fill="none" stroke="var(--ink)" stroke-width="2"/>
+        <circle cx="25" cy="24" r="4" fill="none" stroke="var(--ink)" stroke-width="2"/>
+        <path d="M16 10 L7 20 M16 10 L25 20" stroke="var(--ink)" stroke-width="2" stroke-linecap="round"/>
+      </svg>
+      <span class="name" style="font-family:var(--mono);font-weight:700;letter-spacing:-.02em">c<b style="color:var(--accent)">a</b>ggle</span>
+    </a>
+    <nav class="nav">
+      <a href="simulate.html" class="active">시뮬레이션</a>
+      <a href="practice.html">연습</a>
+      <a href="exam.html">실전</a>
+      <a href="leaderboard.html">리더보드</a>
+    </nav>
+    <div class="spacer"></div>
+    <div id="user-chip" class="avatar" style="font-size:12px">--</div>
+  </header>
+
+  <main class="page wide">
+    <div style="margin-bottom:28px">
+      <span class="kicker accent">SPLIT SIMULATOR · 점수 미반영</span>
+      <h1 style="margin-top:10px;font-size:28px">단일 분할 시뮬레이터</h1>
+      <p class="muted" style="margin-top:8px;font-size:15px">속성과 조건을 선택해 데이터가 어떻게 나뉘는지, Gini 불순도와 Information Gain이 어떻게 변하는지 확인하세요.</p>
+    </div>
+
+    <div class="sim-grid">
+      <!-- LEFT: controls -->
+      <div class="card card-pad ctrl-card">
+        <span class="kicker">분할 조건 설정</span>
+
+        <div class="field">
+          <label>속성 (Attribute)</label>
+          <select id="sel-attr" class="input" onchange="onAttrChange()">
+            <option>Na_to_K</option>
+            <option>Age</option>
+            <option>BP</option>
+            <option>Sex</option>
+            <option>Cholesterol</option>
+          </select>
+        </div>
+
+        <div class="field" id="op-field">
+          <label>연산자 (Operator)</label>
+          <div class="seg" id="seg-op"></div>
+        </div>
+
+        <div class="field" id="val-field">
+          <label>값 (Value)</label>
+          <input id="inp-val" class="input" type="number" value="15" step="0.5" oninput="render()"/>
+        </div>
+
+        <div id="val-cat-field" class="field" style="display:none">
+          <label>값 (Value)</label>
+          <select id="sel-val" class="input" onchange="render()"></select>
+        </div>
+
+        <hr class="hr"/>
+        <div>
+          <span class="kicker" style="margin-bottom:8px;display:block">데이터셋</span>
+          <label class="checkbox" style="margin-bottom:6px">
+            <input type="radio" name="ds" value="practice" checked onchange="render()"/> 연습셋 (100행)
+          </label>
+          <label class="checkbox">
+            <input type="radio" name="ds" value="all" onchange="render()"/> 전체 200행
+          </label>
+        </div>
+
+        <a href="practice.html" class="btn btn-primary btn-sm">트리 빌더로 이동 →</a>
+      </div>
+
+      <!-- CENTER: distribution -->
+      <div>
+        <div class="card" style="margin-bottom:16px">
+          <div class="card-head"><h3>분할 전 — 전체 데이터</h3><span id="before-n" class="tag"></span></div>
+          <div class="card-pad"><div id="dist-before" class="dist-bar-wrap"></div></div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+          <div class="card">
+            <div class="card-head">
+              <h3 style="color:oklch(0.55 0.15 150)">True ✓</h3>
+              <span id="true-n" class="tag"></span>
+            </div>
+            <div class="card-pad"><div id="dist-true" class="dist-bar-wrap"></div></div>
+          </div>
+          <div class="card">
+            <div class="card-head">
+              <h3 style="color:var(--accent-strong)">False ✗</h3>
+              <span id="false-n" class="tag"></span>
+            </div>
+            <div class="card-pad"><div id="dist-false" class="dist-bar-wrap"></div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- RIGHT: metrics -->
+      <div class="card card-pad" style="display:flex;flex-direction:column;gap:0">
+        <span class="kicker" style="margin-bottom:14px">불순도 지표</span>
+
+        <div class="metric-row">
+          <span class="k">Gini (전체)</span>
+          <span id="gini-before" class="v"></span>
+        </div>
+        <div class="metric-row">
+          <span class="k">Gini (True)</span>
+          <span id="gini-true" class="v"></span>
+        </div>
+        <div class="metric-row">
+          <span class="k">Gini (False)</span>
+          <span id="gini-false" class="v"></span>
+        </div>
+        <div class="metric-row">
+          <span class="k">Gini 가중평균</span>
+          <span id="gini-weighted" class="v"></span>
+        </div>
+
+        <hr class="hr" style="margin:16px 0"/>
+
+        <span class="kicker" style="margin-bottom:10px">Information Gain</span>
+        <div class="gain-big" id="info-gain">–</div>
+        <p class="muted3" style="font-size:12px;font-family:var(--mono);margin-top:6px">= Gini(전체) − Gini(가중)</p>
+
+        <hr class="hr" style="margin:16px 0"/>
+
+        <div class="metric-row">
+          <span class="k">True 행 수</span>
+          <span id="m-true" class="v"></span>
+        </div>
+        <div class="metric-row">
+          <span class="k">False 행 수</span>
+          <span id="m-false" class="v"></span>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script src="drug_data.js"></script>
+<script>
+// session check
+const sess = getSession();
+if (!sess) location.href='login.html';
+else document.getElementById('user-chip').textContent = sess.username.slice(0,2).toUpperCase();
+
+const NUMERIC_OPS = ['>=','>','<=','<'];
+const CAT_OPS = ['==','!='];
+
+function getDataset() {
+  const v = document.querySelector('input[name=ds]:checked').value;
+  if (v === 'all') return [...PRACTICE_DATA, ...EXAM_DATA];
+  return PRACTICE_DATA;
+}
+
+function onAttrChange() {
+  const attr = document.getElementById('sel-attr').value;
+  const isNum = NUMERIC_ATTRS.has(attr);
+  // operator segment
+  const ops = isNum ? NUMERIC_OPS : CAT_OPS;
+  const segOp = document.getElementById('seg-op');
+  segOp.innerHTML = ops.map((o,i) =>
+    `<button class="${i===0?'on':''}" onclick="selectOp(this,'${o}')">${o}</button>`
+  ).join('');
+
+  // value field
+  document.getElementById('val-field').style.display = isNum ? '' : 'none';
+  document.getElementById('val-cat-field').style.display = isNum ? 'none' : '';
+  if (!isNum) {
+    const selVal = document.getElementById('sel-val');
+    selVal.innerHTML = (CAT_VALUES[attr]||[]).map(v => `<option>${v}</option>`).join('');
+  } else {
+    // reasonable defaults
+    const defaults = { Age: 45, Na_to_K: 15 };
+    document.getElementById('inp-val').value = defaults[attr] ?? 0;
+    document.getElementById('inp-val').step = attr === 'Na_to_K' ? 0.5 : 1;
+  }
+  render();
+}
+
+function selectOp(btn, op) {
+  btn.parentElement.querySelectorAll('button').forEach(b => b.classList.remove('on'));
+  btn.classList.add('on');
+  render();
+}
+
+function getOp() {
+  const on = document.querySelector('#seg-op button.on');
+  return on ? on.textContent : '>=';
+}
+
+function getValue() {
+  const attr = document.getElementById('sel-attr').value;
+  if (NUMERIC_ATTRS.has(attr)) return parseFloat(document.getElementById('inp-val').value) || 0;
+  return document.getElementById('sel-val').value;
+}
+
+const CLS_COLORS = {
+  A: 'oklch(0.62 0.20 25)',
+  B: 'oklch(0.62 0.18 50)',
+  C: 'oklch(0.62 0.14 150)',
+  X: 'oklch(0.62 0.13 250)',
+  Y: 'oklch(0.62 0.12 80)',
+};
+
+function renderDist(containerId, rows, maxN) {
+  const cnt = {};
+  CLASSES.forEach(c => cnt[c] = 0);
+  rows.forEach(r => cnt[r.Drug]++);
+  const el = document.getElementById(containerId);
+  el.innerHTML = CLASSES.map(c => {
+    const pct = maxN > 0 ? (cnt[c]/maxN)*100 : 0;
+    return `<div class="dist-bar-row">
+      <span class="cls" style="color:${CLS_COLORS[c]}">${c}</span>
+      <div class="dist-bar-track">
+        <div class="dist-bar-fill" style="width:${pct.toFixed(1)}%;background:${CLS_COLORS[c]}"></div>
+      </div>
+      <span class="dist-bar-val">${cnt[c]}</span>
+    </div>`;
+  }).join('');
+}
+
+function render() {
+  const attr = document.getElementById('sel-attr').value;
+  const op = getOp();
+  const value = getValue();
+  const data = getDataset();
+
+  const { trueRows, falseRows } = splitData(data, attr, op, value);
+  const n = data.length;
+  const gB = gini(data), gT = gini(trueRows), gF = gini(falseRows);
+  const gW = (trueRows.length/n)*gT + (falseRows.length/n)*gF;
+  const ig = gB - gW;
+
+  renderDist('dist-before', data, n);
+  renderDist('dist-true', trueRows, n);
+  renderDist('dist-false', falseRows, n);
+
+  document.getElementById('before-n').textContent = n + '행';
+  document.getElementById('true-n').textContent = trueRows.length + '행';
+  document.getElementById('false-n').textContent = falseRows.length + '행';
+
+  document.getElementById('gini-before').textContent = gB.toFixed(4);
+  document.getElementById('gini-true').textContent = trueRows.length ? gT.toFixed(4) : '—';
+  document.getElementById('gini-false').textContent = falseRows.length ? gF.toFixed(4) : '—';
+  document.getElementById('gini-weighted').textContent = gW.toFixed(4);
+  const gainEl = document.getElementById('info-gain');
+  gainEl.textContent = ig.toFixed(4);
+  gainEl.className = 'gain-big' + (ig > 0.01 ? ' up' : '');
+
+  document.getElementById('m-true').textContent = trueRows.length;
+  document.getElementById('m-false').textContent = falseRows.length;
+}
+
+// init
+onAttrChange();
+</script>
+
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" crossorigin="anonymous"></script>
+<script type="text/babel" src="pages/assets/tweaks-panel.jsx"></script>
+<script type="text/babel" src="pages/assets/accent-tweak.jsx"></script>
+</body>
+</html>
