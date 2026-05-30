@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Topbar from '@/components/Topbar';
 import { getSession, getUsers } from '@/lib/storage';
@@ -42,56 +42,60 @@ export default function AdminPage() {
     return () => clearInterval(timerRef.current);
   }, []);
 
+  const loadRows = useCallback(async () => {
+    const users = getUsers();
+    const [lb, allAttempts, profiles] = await Promise.all([fetchLeaderboard(), fetchAllAttempts(), getProfiles()]);
+    const lbMap = Object.fromEntries(lb.map(e => [e.username, e]));
+
+    const subInfo: Record<string, { count: number; lastAt: string | null }> = {};
+    allAttempts.filter(a => a.mode === 'final').forEach(a => {
+      const u = a.username;
+      if (!subInfo[u]) subInfo[u] = { count: 0, lastAt: null };
+      subInfo[u].count++;
+      if (!subInfo[u].lastAt || (a.submitted_at && a.submitted_at > subInfo[u].lastAt!)) {
+        subInfo[u].lastAt = a.submitted_at ?? null;
+      }
+    });
+
+    const built: Row[] = Object.entries(users)
+      .filter(([, info]) => info.role === 'student')
+      .map(([username, info]) => {
+        const best = lbMap[username] ?? null;
+        const si = subInfo[username] ?? { count: 0, lastAt: null };
+        return {
+          username,
+          teamName: profiles[username] ?? info.teamName ?? '',
+          bestAccuracy: best?.accuracy ?? null,
+          bestF1: best?.macro_f1 ?? null,
+          bestNodes: best?.node_count ?? null,
+          submitCount: si.count,
+          lastAt: si.lastAt ? new Date(si.lastAt).getTime() : null,
+        };
+      });
+
+    setRows(built);
+  }, []);
+
   useEffect(() => {
     const s = getSession();
     if (!s) { router.replace('/login'); return; }
     if (s.role !== 'admin') { router.replace('/simulate'); return; }
     setAuthorized(true);
 
-    // 세션 로드 + 실시간 구독
     getExamSession().then(setSession).catch(() => {});
-    const ch = supabase.channel('admin-session')
+    loadRows();
+
+    const ch = supabase
+      .channel('admin-realtime')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'exam_sessions' },
         () => getExamSession().then(setSession).catch(() => {}))
+      // attempts 변경 시 자동 갱신
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'attempts' },
+        () => loadRows())
       .subscribe();
 
-    async function load() {
-      const users = getUsers();
-      const [lb, allAttempts, profiles] = await Promise.all([fetchLeaderboard(), fetchAllAttempts(), getProfiles()]);
-      const lbMap = Object.fromEntries(lb.map(e => [e.username, e]));
-
-      // 사용자별 제출 수 + 마지막 제출 시각
-      const subInfo: Record<string, { count: number; lastAt: string | null }> = {};
-      allAttempts.filter(a => a.mode === 'final').forEach(a => {
-        const u = a.username;
-        if (!subInfo[u]) subInfo[u] = { count: 0, lastAt: null };
-        subInfo[u].count++;
-        if (!subInfo[u].lastAt || (a.submitted_at && a.submitted_at > subInfo[u].lastAt!)) {
-          subInfo[u].lastAt = a.submitted_at ?? null;
-        }
-      });
-
-      const built: Row[] = Object.entries(users)
-        .filter(([, info]) => info.role === 'student')
-        .map(([username, info]) => {
-          const best = lbMap[username] ?? null;
-          const si = subInfo[username] ?? { count: 0, lastAt: null };
-          return {
-            username,
-            teamName: profiles[username] ?? info.teamName ?? '',
-            bestAccuracy: best?.accuracy ?? null,
-            bestF1: best?.macro_f1 ?? null,
-            bestNodes: best?.node_count ?? null,
-            submitCount: si.count,
-            lastAt: si.lastAt ? new Date(si.lastAt).getTime() : null,
-          };
-        });
-
-      setRows(built);
-    }
-    load();
     return () => { supabase.removeChannel(ch); };
-  }, [router]);
+  }, [router, loadRows]);
 
   if (!authorized) return null;
 
