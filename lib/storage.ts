@@ -77,7 +77,12 @@ export function seedAdmin() {
   }
   INITIAL_STUDENTS.forEach(([name, team]) => {
     if (!users[name]) {
+      // 신규 사용자: 초기 팀명 포함해서 생성
       users[name] = { role: 'student', ...(team ? { teamName: team } : {}) };
+      changed = true;
+    } else if (team && users[name].teamName === undefined) {
+      // 기존 사용자인데 팀명이 아직 없으면 초기값 적용
+      users[name].teamName = team;
       changed = true;
     }
   });

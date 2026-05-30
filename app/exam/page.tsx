@@ -58,6 +58,7 @@ export default function ExamPage() {
   const router = useRouter();
   const [tree, setTree] = useState<TreeNode | null>(null);
   const [testResult, setTestResult] = useState<ScoreResult | null>(null);
+  const [showTrainScore, setShowTrainScore] = useState(false);
   const [username, setUsername] = useState('');
   const [submitCount, setSubmitCount] = useState(0);
   const [submitting, setSubmitting] = useState(false);
@@ -114,23 +115,25 @@ export default function ExamPage() {
   const remSec = Math.floor((remainingMs % 60000) / 1000);
   const remainingText = sessionActive ? `${remMin}분 ${String(remSec).padStart(2, '0')}초 남음` : '';
 
-  // 채점만 — 횟수 소모 없음
+  // 채점 — 훈련셋 결과 표시 (횟수 소모 없음, 정답 누수 없음)
   const handleScore = () => {
     if (!tree) return;
-    setTestResult(scoreTree(tree, EXAM_DATA));
+    setShowTrainScore(true);
   };
 
-  // 제출 — Supabase 저장 + 횟수 차감
+  // 제출 — 테스트셋 채점 후 Supabase 저장 + 횟수 차감
   const handleSubmit = async () => {
-    if (!testResult || locked || submitting) return;
+    if (!tree || locked || submitting) return;
     setSubmitting(true);
     try {
+      const examScore = scoreTree(tree, EXAM_DATA);
+      setTestResult(examScore);
       await insertAttempt({
         username, mode: 'final',
         tree_json: JSON.stringify(tree),
-        node_count: testResult.nodeCount,
-        accuracy: testResult.accuracy,
-        macro_f1: testResult.macroF1,
+        node_count: examScore.nodeCount,
+        accuracy: examScore.accuracy,
+        macro_f1: examScore.macroF1,
       });
       const newCount = await getSubmitCount(username);
       setSubmitCount(newCount);
@@ -230,7 +233,7 @@ export default function ExamPage() {
                 <span className="tag">
                   {tree ? `노드 ${trainResult.nodeCount} · 훈련 ${(trainResult.accuracy * 100).toFixed(1)}%` : '빈 트리'}
                 </span>
-                <button className="btn btn-ghost btn-sm" onClick={() => { if (confirm('트리를 초기화할까요?')) { setTree(null); setTestResult(null); } }} disabled={locked}>
+                <button className="btn btn-ghost btn-sm" onClick={() => { if (confirm('트리를 초기화할까요?')) { setTree(null); setTestResult(null); setShowTrainScore(false); } }} disabled={locked}>
                   초기화
                 </button>
               </div>
@@ -240,16 +243,16 @@ export default function ExamPage() {
             </div>
           </div>
 
-          {/* 테스트셋 분류 결과 */}
-          {testResult && (
+          {/* 훈련셋 채점 결과 테이블 */}
+          {showTrainScore && tree && (
             <div className="card" style={{ marginTop: 16 }}>
               <div className="card-head">
-                <h3>테스트셋 분류 결과</h3>
+                <h3>훈련셋 채점 결과</h3>
                 <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
                   <span className="tag accent">
-                    {(testResult.accuracy * 100).toFixed(1)}% · {testResult.correct}/{testResult.total}
+                    {(trainResult.accuracy * 100).toFixed(1)}% · {trainResult.correct}/{trainResult.total}
                   </span>
-                  <button className="btn btn-ghost btn-sm" onClick={() => setTestResult(null)}>닫기</button>
+                  <button className="btn btn-ghost btn-sm" onClick={() => setShowTrainScore(false)}>닫기</button>
                 </div>
               </div>
               <div style={{ overflowX: 'auto', maxHeight: 420, overflowY: 'auto' }}>
@@ -260,7 +263,7 @@ export default function ExamPage() {
                     <th>예측</th><th>실제</th>
                   </tr></thead>
                   <tbody>
-                    {testResult.scored.map((r, i) => (
+                    {trainResult.scored.map((r, i) => (
                       <tr key={i} style={r.ok ? {} : { background: 'oklch(0.98 0.015 25)' }}>
                         <td className="num muted3" style={{ fontSize: 12 }}>{i + 1}</td>
                         <td className="num" style={{ fontSize: 12 }}>{r.Age}</td>
@@ -268,21 +271,43 @@ export default function ExamPage() {
                         <td style={{ fontFamily: 'var(--font-mono)', fontSize: 12 }}>{r.BP}</td>
                         <td style={{ fontFamily: 'var(--font-mono)', fontSize: 12 }}>{r.Cholesterol}</td>
                         <td className="num" style={{ fontSize: 12 }}>{(r.Na_to_K as number).toFixed(3)}</td>
-                        <td>
-                          <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: 13, color: DRUG_CLASS_COLOR[r.pred] ?? 'var(--ink-3)' }}>
-                            {r.pred === 'UNCLASSIFIED' ? '미분류' : r.pred}
-                          </span>
-                        </td>
-                        <td>
-                          <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: 13, color: r.ok ? 'oklch(0.45 0.15 150)' : 'var(--accent-strong)' }}>
-                            {r.ok ? '✓' : '✗'} {r.Drug}
-                          </span>
-                        </td>
+                        <td><span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: 13, color: DRUG_CLASS_COLOR[r.pred] ?? 'var(--ink-3)' }}>
+                          {r.pred === 'UNCLASSIFIED' ? '미분류' : r.pred}
+                        </span></td>
+                        <td><span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: 13, color: r.ok ? 'oklch(0.45 0.15 150)' : 'var(--accent-strong)' }}>
+                          {r.ok ? '✓' : '✗'} {r.Drug}
+                        </span></td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
               </div>
+            </div>
+          )}
+
+          {/* 테스트셋 제출 결과 — 집계만 */}
+          {testResult && (
+            <div className="card card-pad" style={{ marginTop: 16 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+                <h3>테스트셋 제출 결과</h3>
+                <button className="btn btn-ghost btn-sm" onClick={() => setTestResult(null)}>닫기</button>
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                {[
+                  { lab: 'Accuracy', val: (testResult.accuracy * 100).toFixed(2) + '%', accent: true },
+                  { lab: 'Macro-F1', val: testResult.macroF1.toFixed(4), accent: false },
+                  { lab: '정답 수', val: `${testResult.correct} / ${testResult.total}`, accent: false },
+                  { lab: '노드 수', val: String(testResult.nodeCount), accent: false },
+                ].map(({ lab, val, accent }) => (
+                  <div key={lab} style={{ padding: '12px 14px', background: accent ? 'var(--accent-soft-2)' : 'var(--surface-2)', borderRadius: 'var(--radius-sm)', border: `1px solid ${accent ? 'var(--accent-border)' : 'var(--border)'}` }}>
+                    <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10.5, letterSpacing: '.07em', textTransform: 'uppercase', color: 'var(--ink-3)' }}>{lab}</div>
+                    <div style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: 22, marginTop: 4, color: accent ? 'var(--accent-strong)' : 'var(--ink)' }}>{val}</div>
+                  </div>
+                ))}
+              </div>
+              <p className="muted3" style={{ fontSize: 11.5, fontFamily: 'var(--font-mono)', marginTop: 10, textAlign: 'center' }}>
+                테스트셋 개별 정답은 공개되지 않습니다
+              </p>
             </div>
           )}
         </section>
@@ -318,7 +343,7 @@ export default function ExamPage() {
               <button
                 className="btn btn-primary"
                 style={{ flex: 1, justifyContent: 'center' }}
-                disabled={!testResult || locked || submitting || !sessionActive}
+                disabled={!tree || locked || submitting || !sessionActive}
                 onClick={handleSubmit}
               >
                 {submitting ? '제출 중…' : locked ? '소진' : '제출하기'}

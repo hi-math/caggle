@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 import { getSession, clearSession, getUsers, updateTeamName } from '@/lib/storage';
+import { upsertProfile } from '@/lib/supabase';
 
 const NAV = [
   { href: '/simulate', label: '시뮬레이션' },
@@ -38,7 +39,12 @@ export default function Topbar() {
 
   const saveEdit = () => {
     const s = getSession();
-    if (s) { updateTeamName(s.username, draft); setTeamName(draft.trim()); }
+    if (s) {
+      const trimmed = draft.trim();
+      updateTeamName(s.username, trimmed);   // localStorage
+      upsertProfile(s.username, trimmed).catch(console.error); // Supabase
+      setTeamName(trimmed);
+    }
     setEditing(false);
   };
 

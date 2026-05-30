@@ -64,6 +64,22 @@ export async function fetchLeaderboard(): Promise<LeaderboardRow[]> {
   );
 }
 
+// ── 프로필 (팀명) ──────────────────────────────────────────────────────────────
+export async function upsertProfile(username: string, teamName: string) {
+  return supabase.from('profiles').upsert({
+    username,
+    team_name: teamName,
+    updated_at: new Date().toISOString(),
+  });
+}
+
+export async function getProfiles(): Promise<Record<string, string>> {
+  const { data } = await supabase.from('profiles').select('username, team_name');
+  const map: Record<string, string> = {};
+  (data ?? []).forEach(r => { map[r.username] = r.team_name ?? ''; });
+  return map;
+}
+
 // ── 시험 세션 ─────────────────────────────────────────────────────────────────
 export interface ExamSession {
   id: number;

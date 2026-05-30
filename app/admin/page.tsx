@@ -4,7 +4,7 @@ import { useEffect, useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Topbar from '@/components/Topbar';
 import { getSession, getUsers } from '@/lib/storage';
-import { supabase, fetchLeaderboard, fetchAllAttempts, getExamSession, startExamSession, stopExamSession } from '@/lib/supabase';
+import { supabase, fetchLeaderboard, fetchAllAttempts, getExamSession, startExamSession, stopExamSession, getProfiles } from '@/lib/supabase';
 import type { LeaderboardRow, DbAttempt, ExamSession } from '@/lib/supabase';
 
 interface Row {
@@ -57,7 +57,7 @@ export default function AdminPage() {
 
     async function load() {
       const users = getUsers();
-      const [lb, allAttempts] = await Promise.all([fetchLeaderboard(), fetchAllAttempts()]);
+      const [lb, allAttempts, profiles] = await Promise.all([fetchLeaderboard(), fetchAllAttempts(), getProfiles()]);
       const lbMap = Object.fromEntries(lb.map(e => [e.username, e]));
 
       // 사용자별 제출 수 + 마지막 제출 시각
@@ -78,7 +78,7 @@ export default function AdminPage() {
           const si = subInfo[username] ?? { count: 0, lastAt: null };
           return {
             username,
-            teamName: info.teamName ?? '',
+            teamName: profiles[username] ?? info.teamName ?? '',
             bestAccuracy: best?.accuracy ?? null,
             bestF1: best?.macro_f1 ?? null,
             bestNodes: best?.node_count ?? null,
